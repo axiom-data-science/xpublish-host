@@ -10,9 +10,7 @@ requires = [
 name = "xpublish-host"
 description = "A collection of tools to standardize xpublish hosting"
 readme = "README.md"
-[project.license]
-file="LICENSE.txt"
-
+license = {file="LICENSE.txt"}
 authors = [
   { name="Kyle Wilcox", email="kyle@axds.co" },
 ]
