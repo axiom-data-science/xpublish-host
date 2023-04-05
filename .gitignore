@@ -1,0 +1,9 @@
+*.egg-info
+.tox
+*.pyc
+__pycache__
+xpublish_host/_version.py
+dist/
+build/
+.vscode/
+.pytest_cache/

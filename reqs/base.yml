@@ -1,0 +1,17 @@
+name: xpublish-host
+channels:
+  - conda-forge
+dependencies:
+  - conda-forge::python >=3.8,<3.12
+  - conda-forge::pip
+
+  - conda-forge::libnetcdf <4.9.1  # HDF5 bugs galore!
+  - conda-forge::netCDF4
+  - conda-forge::ruamel.yaml
+  - conda-forge::xarray
+  # - conda-forge::xpublish
+  # - conda-forge::xpublish_intake
+  - pip:
+    - git+https://github.com/xarray-contrib/xpublish.git@main#egg=xpublish
+    - git+https://github.com/axiom-data-science/xpublish-intake.git@main#egg=xpublish_intake
+    - goodconf

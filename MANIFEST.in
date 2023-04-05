@@ -1,0 +1,13 @@
+include LICENSE.txt
+include README.md
+include pyproject.toml
+include reqs/*.yml
+
+graft xpublish_host
+
+prune tests
+prune *.egg-info
+prune .github
+
+exclude .gitignore
+exclude .pre-commit-config.yaml

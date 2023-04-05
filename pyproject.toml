@@ -1,0 +1,51 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [
+  "setuptools>=61",
+  "setuptools_scm[toml]>=3.4",
+  "wheel",
+]
+
+[project]
+name = "xpublish-host"
+description = "A collection of tools to standardize xpublish hosting"
+readme = "README.md"
+authors = [
+  { name="Kyle Wilcox", email="kyle@axds.co" },
+]
+requires-python = ">=3.8"
+classifiers = [
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+]
+dynamic =[
+  "version",
+]
+dependencies = [
+  "goodconf",
+  "pydantic",
+  "xpublish",
+]
+[project.urls]
+"Bug Tracker" = "https://github.com/axiom-data-science/xpublish-host/issues"
+"Homepage" = "https://github.com/axiom-data-science/xpublish-host"
+
+[tool.setuptools]
+packages = ["xpublish_host"]
+zip-safe = false
+include-package-data = true
+
+[tool.setuptools_scm]
+write_to = "xpublish_host/_version.py"
+write_to_template = "__version__ = '{version}'"
