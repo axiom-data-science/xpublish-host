@@ -83,7 +83,7 @@ plugins_load_defaults: true
 
 # Define any additional plugins. This is where you can override
 # default plugins. These will replace any auto-discovered plugins.
-# The keys here (pc1) are not important and are not used internally)
+# The keys here (pc1) are not important and are not used internally
 plugins_config:
   pc1:
     module: xpublish.plugins.included.zarr.ZarrPlugin
@@ -102,7 +102,7 @@ cache_config:
   available_bytes: 1e11
 
 # Define all of the datasets to load into the xpublish instance.
-# The keys here (dc1) are not important and are not used internally)
+# The keys here (dc1) are not important and are not used internally
 datasets_config:
   dc1:
     # The ID is used as the "key" of the dataset in `xpublish.Rest`
@@ -117,7 +117,8 @@ datasets_config:
     args:
       - [loader arg1]
       - [loader arg2]
-    # Keyword arguments passed into the `loader` function
+    # Keyword arguments passed into the `loader` function. See the `examples`
+    # directory for more details on how this can be used.
     kwargs:
       t_axis: 'time'
       y_axis: 'lat'
@@ -202,7 +203,7 @@ Either way, `xpublish` will be running on port 9000 with (2) datasets: `simple` 
 The Docker image by default loads a configuration file from `/xpd/config.yaml` and an environmental variable file from `/xpd/.env`. You can change the location of those files by setting the env variables `XPUB_CONFIG_FILE` and `XPUB_ENV_FILES` respectively.
 
 ```shell
-docker build -t xpublish-host
+docker build -t xpublish-host .
 
 # Using default config path
 docker run --rm -p 9000:9000 -v "$(pwd)/xpublish_host/examples/example.yaml:/xpd/config.yaml" xpublish-host

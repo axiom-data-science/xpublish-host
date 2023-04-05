@@ -10,6 +10,9 @@ requires = [
 name = "xpublish-host"
 description = "A collection of tools to standardize xpublish hosting"
 readme = "README.md"
+[project.license]
+file="LICENSE.txt"
+
 authors = [
   { name="Kyle Wilcox", email="kyle@axds.co" },
 ]
@@ -42,7 +45,7 @@ dependencies = [
 "Homepage" = "https://github.com/axiom-data-science/xpublish-host"
 
 [tool.setuptools]
-packages = ["xpublish_host"]
+packages = ["xpublish_host", "xpublish_host.examples"]
 zip-safe = false
 include-package-data = true
 

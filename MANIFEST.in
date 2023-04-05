@@ -1,13 +1,12 @@
-include LICENSE.txt
-include README.md
-include pyproject.toml
-include reqs/*.yml
-
 graft xpublish_host
 
 prune tests
 prune *.egg-info
 prune .github
+prune **/__pycache__
+prune reqs
 
+exclude Dockerfile
+exclude .dockerignore
 exclude .gitignore
 exclude .pre-commit-config.yaml
