@@ -1,6 +1,6 @@
 # xpublish-host
 
-A collection tools and standards for deploying [`xpublish`](https://github.com/xarray-contrib/xpublish) instances.
+A collection of tools and standards for deploying [`xpublish`](https://github.com/xarray-contrib/xpublish) instances.
 
 ## Why?
 
