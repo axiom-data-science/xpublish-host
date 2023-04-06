@@ -36,7 +36,7 @@ pip install xpublish_host
 
 ## Usage
 
-### Configruation
+### Configuration
 
 The configuration is managed using `Pydantic` [BaseSettings](https://docs.pydantic.dev/usage/settings/) and [GoodConf](https://github.com/lincolnloop/goodconf/) for loading configuration from files.
 
