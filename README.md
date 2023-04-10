@@ -9,7 +9,7 @@ With ~50 netCDF-based datasets to be published through `xpublish`, Axiom needed 
 ## Goals
 
 * Standardize the configuration of an `xpublish` deployment (plugins, ports, cache, dask clusters, datasets, etc.) using config files and environmental variables, not python code.
-* Standardize monitoring and metrics of an `xpublish` deployment,
+* Standardize on a core set of `FastAPI` observability middleware (metrics, etc.),
 * Provide a pre-built Docker image to run an opinionated `xpublish` deployment.
 
 ## Ideas
@@ -33,6 +33,11 @@ or, if you are a `pip` user
 ```shell
 pip install xpublish_host
 ```
+
+## Batteries Included
+
+* `/metrics` - Multi-process supported application metrics. To turn this off set the `XPD_DISABLE_METRICS` environment variable
+* `/health` - A health-check endpoint. To turn this off set the `XPD_DISABLE_HEALTH` environment variable
 
 ## Usage
 

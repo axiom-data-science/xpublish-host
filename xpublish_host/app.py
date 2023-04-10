@@ -1,8 +1,17 @@
 import os
+import logging
 
+from fastapi import status
+from fastapi.responses import JSONResponse
 from uvicorn.workers import UvicornWorker
 
 from xpublish_host.config import RestConfig
+
+logging.basicConfig(level=logging.INFO)
+logging.getLogger('distributed').setLevel(logging.ERROR)
+logging.getLogger('dask').setLevel(logging.ERROR)
+
+L = logging.getLogger(__name__)
 
 
 class XpdWorker(UvicornWorker):
@@ -11,7 +20,49 @@ class XpdWorker(UvicornWorker):
     }
 
 
-def setup_xpublish(config_file: str = None):
+def health_check(request):
+    return JSONResponse(
+        {'xpublish': 'online'},
+        status_code=status.HTTP_200_OK,
+        media_type="application/health+json",
+    )
+
+
+def setup_health(app):
+    if os.environ.get("XPUB_DISABLE_HEALTH"):
+        return
+
+    app.add_route("/health", health_check)
+    return
+
+
+def setup_metrics(app):
+
+    if os.environ.get("XPUB_DISABLE_METRICS"):
+        return
+
+    envvar = 'PROMETHEUS_MULTIPROC_DIR'
+    if envvar not in os.environ:
+        L.warning(f"{envvar} is not set! Metrics will not work if using gunicorn.")
+
+    try:
+        from starlette_exporter import PrometheusMiddleware, handle_metrics
+        from starlette_exporter.optional_metrics import response_body_size, request_body_size
+
+        app.add_middleware(
+            PrometheusMiddleware,
+            app_name='xpublish_host',
+            prefix='xpub',
+            buckets=[0.01, 0.1, 0.25, 0.5, 1.0],
+            skip_paths=['/health', '/metrics', '/favicon.ico'],
+            group_paths=False,
+            optional_metrics=[response_body_size, request_body_size]
+        )
+        app.add_route("/metrics", handle_metrics)
+    except BaseException:
+        raise
+
+
     config = RestConfig()
 
     # Look for environmental variable defining the location

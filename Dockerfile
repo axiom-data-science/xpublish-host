@@ -24,6 +24,7 @@ RUN micromamba install --name base --yes --file /tmp/base.yml && \
 
 ARG MAMBA_DOCKERFILE_ACTIVATE=1
 ENV PATH "$MAMBA_ROOT_PREFIX/bin:$PATH"
+ENV PROMETHEUS_MULTIPROC_DIR /tmp/metrics
 
 # Copy packrat contents and install
 ENV XPUB_HOME /xpd
@@ -31,11 +32,12 @@ WORKDIR $XPUB_HOME
 COPY --chown=mambauser:mambauser . $XPUB_HOME/
 
 ARG PSEUDO_VERSION=1
-RUN SETUPTOOLS_SCM_PRETEND_VERSION=${PSEUDO_VERSION} pip install -e .
+RUN SETUPTOOLS_SCM_PRETEND_VERSION=${PSEUDO_VERSION} pip install -e . && \
+    mkdir -p ${PROMETHEUS_MULTIPROC_DIR}
 
 ENV XPUB_CONFIG_FILE ${XPUB_HOME}/config.yaml
 ENV XPUB_ENV_FILES ${XPUB_HOME}/.env
 
 EXPOSE 9000
 
-CMD ["gunicorn", "xpublish_host.app:app", "-b 127.0.0.1:9000", "-w 4", "-k xpublish_host.app.XpdWorker"]
+CMD ["gunicorn", "xpublish_host.app:app", "--config", "xpublish_host/gunicorn.conf.py"]

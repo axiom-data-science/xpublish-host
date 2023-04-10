@@ -16,3 +16,4 @@ dependencies:
     - git+https://github.com/xarray-contrib/xpublish.git@main#egg=xpublish
     - git+https://github.com/axiom-data-science/xpublish-intake.git@main#egg=xpublish_intake
     - goodconf
+    - starlette_exporter
