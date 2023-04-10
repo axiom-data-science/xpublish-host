@@ -36,4 +36,6 @@ RUN SETUPTOOLS_SCM_PRETEND_VERSION=${PSEUDO_VERSION} pip install -e .
 ENV XPUB_CONFIG_FILE ${XPUB_HOME}/config.yaml
 ENV XPUB_ENV_FILES ${XPUB_HOME}/.env
 
-CMD ["python", "xpublish_host/config.py"]
+EXPOSE 9000
+
+CMD ["gunicorn", "xpublish_host.app:app", "-b 127.0.0.1:9000", "-w 4", "-k xpublish_host.app.XpdWorker"]

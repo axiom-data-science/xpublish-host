@@ -44,7 +44,7 @@ The `xpublish_host` configuration can be set in a few ways
 
 * **Environmental variables** - prefixed with `XPUB_`, they map directly to the `pydantic` settings classes,
 * **Environment files** - Load environmental variables from a file. Uses `XPUB_ENV_FILES` to control the location of this file if it is defined. See the [`Pydantic` docs](https://docs.pydantic.dev/usage/settings/#dotenv-env-support) for more information,
-* **Configuration files (JSON and YAML)** - [`GoodConf` based](https://github.com/lincolnloop/goodconf) configuration files. When using the `xpublish_host.config.serve` helper this file can be set by defining `XPUB_CONFIG_FILE`.
+* **Configuration files (JSON and YAML)** - [`GoodConf` based](https://github.com/lincolnloop/goodconf) configuration files. When using the `xpublish_host.app.serve` helper this file can be set by defining `XPUB_CONFIG_FILE`.
 * **Python arguments (API only)** - When using `xpublish-host` as a library you can use the args/kwargs of each configuration object to control your `xpublish` instance.
 
 There are three Settings classes:
@@ -132,7 +132,7 @@ datasets_config:
 To deploy an `xpublish` instance while pulling settings from a yaml file and environmental variables you can use the `serve` function. This is what is used under the hood in the Docker image.
 
 ```python
-from xpublish_host.config import serve
+from xpublish_host.app import serve
 
 serve('config.yaml')
 
@@ -190,10 +190,15 @@ There is a CLI command you can use to run an `xpublish` server and optionally pa
 
 ```shell
 # Pass in a config file
-python xpublish_host/config.py -c xpublish_host/examples/example.yaml
+python xpublish_host/app.py -c xpublish_host/examples/example.yaml
 
 # Use ENV variables
-XPUB_CONFIG_FILE=xpublish_host/examples/example.yaml python xpublish_host/config.py
+XPUB_CONFIG_FILE=xpublish_host/examples/example.yaml python xpublish_host/app.py
+
+# Use ENV variables and Gunicorn
+XPUB_CONFIG_FILE=xpublish_host/examples/example.yaml gunicorn xpublish_host.app:app -b 0.0.0.0:9000 -w 4 -k xpublish_host.app.XpdWorker
+
+**Note:** when using `gunicorn` the host and port configurations can only be passed in using the `-b` argument. The values in any environmental variables or config files will be ignored.
 ```
 
 Either way, `xpublish` will be running on port 9000 with (2) datasets: `simple` and `kwargs`. You can access the instance at `http://[host]:9000/datasets/`.

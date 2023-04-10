@@ -5,6 +5,7 @@ dependencies:
   - conda-forge::python >=3.8,<3.12
   - conda-forge::pip
 
+  - conda-forge::gunicorn
   - conda-forge::libnetcdf <4.9.1  # HDF5 bugs galore!
   - conda-forge::netCDF4
   - conda-forge::ruamel.yaml
