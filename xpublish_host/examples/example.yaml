@@ -1,7 +1,13 @@
 ---
 
 publish_port: 9000
-cluster_config: {}
+cluster_config: null
+
+plugins_config:
+  zarr:
+    module: xpublish.plugins.included.zarr.ZarrPlugin
+    kwargs:
+      dataset_router_prefix: '/zarr'
 
 datasets_config:
   simple:

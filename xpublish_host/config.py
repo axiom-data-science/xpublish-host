@@ -2,18 +2,21 @@ import ipaddress as ip
 import logging
 import os
 import typing as t
-from copy import copy
 from pprint import pformat
 
 import xpublish
 from goodconf import GoodConf
 from pydantic import BaseModel, PositiveInt, PyObject
 
-logging.basicConfig(level=logging.INFO)
-logging.getLogger('distributed').setLevel(logging.ERROR)
-logging.getLogger('dask').setLevel(logging.ERROR)
-
 L = logging.getLogger(__name__)
+
+
+class ClusterConfig(BaseModel):
+    module: PyObject
+    # Plugin arguments
+    args: set[str] = ()
+    # Plugin named arguments
+    kwargs: dict[str, t.Any] = {}
 
 
 class PluginConfig(BaseModel):
@@ -87,7 +90,7 @@ class RestConfig(GoodConf):
 
     None = use default cluster
     """
-    cluster_config: dict[str, t.Any] | None = None
+    cluster_config: ClusterConfig | None = None
 
     class Config:
         env_file = os.environ.get('XPUB_ENV_FILES', '.env')
@@ -129,45 +132,24 @@ class RestConfig(GoodConf):
         To use no cluster, set to an empty dict. To use the default, set to None.
         This is similar to how plugins work.
         """
-        # Empty dict means don't load a cluster
-        if self.cluster_config == {}:
+        # None or empty - don't load a cluster
+        if not self.cluster_config:
             return None
 
         # Only spawn a cluster if distributed is installed
         try:
-            from dask.distributed import Client, LocalCluster
+            from dask.distributed import Client
         except ImportError:
             L.warning("The dask 'distributed' library is not installed, no cluster support")
             return None
 
-        # None means load the default cluster
-        cluster_config = copy(self.cluster_config)
-        if cluster_config is None:
-            cluster_config = {}
-
-        default_cluster_config = dict(
-            processes=True,
-            n_workers=8,
-            threads_per_worker=1,
-            memory_limit='4GiB',
-            host='0.0.0.0',
-            scheduler_port=0,  # random port
-            dashboard_address='0.0.0.0:0',  # random port
-            worker_dashboard_address='0.0.0.0:0',  # random port
+        cluster = self.cluster_config.module(
+            *self.cluster_config.args,
+            **self.cluster_config.kwargs
         )
 
-        cluster_config = {
-            **default_cluster_config,
-            **cluster_config
-        }
-
-        cluster_info = pformat(cluster_config)
-        L.info(f'Cluster: {cluster_info}')
-
-        # Load a cluster config here and setup cluster as needed.
-        cluster = LocalCluster(**cluster_config)
-        client = Client(cluster)
-        return client
+        L.info(f'Created cluster: {cluster}')
+        return cluster
 
     def setup_plugins(self):
         plugins = {}
@@ -190,8 +172,23 @@ class RestConfig(GoodConf):
             datasets[d.id] = d.load()
         return datasets
 
-    def setup(self):
-        _ = self.setup_cluster()
+    def setup(self, create_cluster_client=True):
+        """
+        _summary_
+
+        Args:
+            create_cluster_client (bool, optional): When run outside of
+                gunicorn this needs to be True for the dask client object
+                to be created. Defaults to True.
+        """
+        if create_cluster_client is True:
+            cluster = self.setup_cluster()
+            if cluster:
+                from dask.distributed import Client
+                client = Client(cluster)
+                L.info(f'Using cluster: {client.cluster}')
+                L.info(f'Dashboard: {client.cluster.dashboard_link}')
+
         rest = self.setup_rest()
         return rest
 

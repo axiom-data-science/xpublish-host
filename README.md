@@ -64,24 +64,27 @@ A feature-full configuration is as follows, which includes the defaults for each
 
 ```yaml
 # These are passed into the `xpublish.Rest.serve` method to control how the
-# server is run
+# server is run. These are ignored if running through `gunicorn` in production mode
+# or using the Docker image. See the `CLI` section below for more details.
 publish_host: "0.0.0.0"
 publish_port: 9000
 log_level: debug
 
-# Dask cluster configuration. Current uses a LocalCluster.
-# The keyword arguments are passed directly into `dask.distributed.LocalCluster`
-# Omitting cluster_config or setting to null will load the defaults.
-# Settings cluster_config to an empty dict will avoid using a dask cluster.
+# Dask cluster configuration.
+# The `args` and `kwargs` arguments are passed directly into the `module`
+# Omitting cluster_config or setting to null will not use a cluster.
 cluster_config:
-  processes: true
-  n_workers: 8
-  threads_per_worker: 1
-  memory_limit: 4GiB
-  host: "0.0.0.0"
-  scheduler_port: 0  # random port
-  dashboard_address: 0.0.0.0:0  # random port
-  worker_dashboard_address: 0.0.0.0:0  # random port
+  module: dask.distributed.LocalCluster
+  args: []
+  kwargs:
+    processes: true
+    n_workers: 2
+    threads_per_worker: 1
+    memory_limit: 1GiB
+    host: "0.0.0.0"
+    scheduler_port: 0  # random port
+    dashboard_address: 0.0.0.0:0  # random port
+    worker_dashboard_address: 0.0.0.0:0  # random port
 
 # Should xpublish discover and load plugins?
 plugins_load_defaults: true
@@ -132,23 +135,52 @@ datasets_config:
         parallel: false
 ```
 
-### API
+### Running
 
-To deploy an `xpublish` instance while pulling settings from a yaml file and environmental variables you can use the `serve` function. This is what is used under the hood in the Docker image.
+There are two main ways to run `xpublish-host`, one is suited for Development (`xpublish` by default uses `uvicorn.run`) and one suited for Production (`xpublish-host` uses `gunicorn`). See the [`Uvicorn` docs](https://www.uvicorn.org/deployment/) for more information.
+
+#### Development
+
+##### API
+
+To configure and deploy an `xpublish` instance while pulling settings from a yaml file and environmental variables you can use the `serve` function.
+
+Load config from a file
 
 ```python
-from xpublish_host.app import serve
+>>> from xpublish_host.app import serve
+>>> serve('xpublish_host/examples/example.yaml')
 
-serve('config.yaml')
-
-os.environ['XPUB_ENV_FILES'] = '/home/user/.env'
-serve()
-
-os.environ['XPUB_CONFIG_FILE'] = 'config.yaml'
-serve()
+INFO:goodconf:Loading config from xpublish_host/examples/example.yaml
+...
+INFO:     Uvicorn running on http://0.0.0.0:9000 (Press CTRL+C to quit)python
 ```
 
-You can also use the `RestConfig` and `DatasetConfig` objects directly to serve datasets
+Load environmental variables from a custom .env file
+```python
+>>> import os
+>>> from xpublish_host.app import serve
+>>> os.environ['XPUB_ENV_FILES'] = '/home/user/.env'
+>>> serve()
+
+INFO:goodconf:No config file specified. Loading with environment variables.
+...
+INFO:     Uvicorn running on http://0.0.0.0:9000 (Press CTRL+C to quit)python
+```
+
+Set the default location to load a configuration file from
+```python
+>>> import os
+>>> from xpublish_host.app import serve
+>>> os.environ['XPUB_CONFIG_FILE'] = 'config.yaml'
+>>> serve()
+
+INFO:goodconf:Loading config from xpublish_host/examples/example.yaml
+...
+INFO:     Uvicorn running on http://0.0.0.0:9000 (Press CTRL+C to quit)python
+```
+
+You can also use the `RestConfig` and `DatasetConfig` objects directly to serve datasets through the API while mixing in configuration file as needed.
 
 #### `RestConfig`
 
@@ -174,6 +206,8 @@ rest.serve(
 
 #### `DatsetConfig`
 
+If you are serving a single dataset there is a helper method `serve` on the `DatasetConfig` object.
+
 ```python
 from xpublish_host.config import DatasetConfig
 
@@ -186,29 +220,65 @@ dc = DatasetConfig(
 
 # Keyword arguments are passed into RestConfig and can include all of the
 # top level configuration options.
-dc.serve()
+dc.serve(
+    host='0.0.0.0',
+    port=9000,
+    log_level='debug',
+)
 ```
 
-### CLI
+##### CLI
 
-There is a CLI command you can use to run an `xpublish` server and optionally pass in the path to a configuration file:
+When developing locally or in a non-production environment you can use helper CLI methods to run an `xpublish` server and optionally pass in the path to a configuration file:
+
+Pass in a config file argument
 
 ```shell
-# Pass in a config file
-python xpublish_host/app.py -c xpublish_host/examples/example.yaml
+$ python xpublish_host/app.py -c xpublish_host/examples/example.yaml
 
-# Use ENV variables
-XPUB_CONFIG_FILE=xpublish_host/examples/example.yaml python xpublish_host/app.py
+INFO:goodconf:Loading config from xpublish_host/examples/example.yaml
+...
+INFO:     Uvicorn running on http://0.0.0.0:9000 (Press CTRL+C to quit)
+```
 
-# Use ENV variables and Gunicorn
-XPUB_CONFIG_FILE=xpublish_host/examples/example.yaml gunicorn xpublish_host.app:app -b 0.0.0.0:9000 -w 4 -k xpublish_host.app.XpdWorker
+Pull config file from an environmental variable
 
-**Note:** when using `gunicorn` the host and port configurations can only be passed in using the `-b` argument. The values in any environmental variables or config files will be ignored.
+```shell
+$ XPUB_CONFIG_FILE=xpublish_host/examples/example.yaml python xpublish_host/app.py
+
+INFO:goodconf:Loading config from xpublish_host/examples/example.yaml
+...
+INFO:     Uvicorn running on http://0.0.0.0:9000 (Press CTRL+C to quit)
 ```
 
 Either way, `xpublish` will be running on port 9000 with (2) datasets: `simple` and `kwargs`. You can access the instance at `http://[host]:9000/datasets/`.
 
-### Docker
+#### Production
+
+To get `xpublish` to play nicely with async loops and processes being run by `gunicorn` and `dask`, there is a custom worker class (`xpublish_host.app.XpdWorker`) and a `gunicorn` config file (`xpublish_host/gunicorn.conf.py`) that must be used. These are loaded automatically if you are using the provided Docker image.
+
+If you define a `cluster_config` object when running using `gunicorn`, one cluster is spun up in the parent process and the scheduler_address for that cluster is passed to each  worker process. If you really want one cluster per process, you will have to implement it yourself and send a PR ;). Better intergration with `LocalCluster` would be nice, but the way it is done now allows a "bring your own" cluster configration as well if you are managing `dask` clusters outside of the scope of this project.
+
+**Note:** when using `gunicorn` the host and port configurations can only be passed in using the `-b/--bind` arguments or in the configuration file. If set in any environmental variables they will be ignored!
+
+##### CLI
+
+You can run `gunicorn` manually (locally) to test how things will run inside of the Docker image.
+
+```shell
+XPUB_CONFIG_FILE=xpublish_host/examples/example.yaml gunicorn xpublish_host.app:app -c xpublish_host/gunicorn.conf.py
+```
+
+If you would like the metrics endpoint (`/metrics`) to function correctly when running through `gunicorn`, you need to create a temporary directory for metrics and pass it in as the `PROMETHEUS_MULTIPROC_DIR` directory. This is handled automatically in the provided Docker image.
+
+```shell
+mkdir -p /tmp/xpub_metrics
+PROMETHEUS_MULTIPROC_DIR=/tmp/xpub_metrics XPUB_CONFIG_FILE=xpublish_host/examples/example.yaml gunicorn xpublish_host.app:app -c xpublish_host/gunicorn.conf.py
+```
+
+Either way, `xpublish` will be running on port 9000 with (2) datasets: `simple` and `kwargs`. You can access the instance at `http://[host]:9000/datasets/`.
+
+##### Docker
 
 The Docker image by default loads a configuration file from `/xpd/config.yaml` and an environmental variable file from `/xpd/.env`. You can change the location of those files by setting the env variables `XPUB_CONFIG_FILE` and `XPUB_ENV_FILES` respectively.
 

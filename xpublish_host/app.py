@@ -63,6 +63,7 @@ def setup_metrics(app):
         raise
 
 
+def setup_config(config_file: str = None, **setup_kwargs):
     config = RestConfig()
 
     # Look for environmental variable defining the location
@@ -79,19 +80,30 @@ def setup_metrics(app):
     if not env_config and not config_file:
         config.load()
 
-    rest = config.setup()
+    return config
+
+
+def setup_xpublish(config: RestConfig = None, **setup_kwargs):
+    rest = config.setup(**setup_kwargs)
+    app = rest.app
+    _ = setup_metrics(app)
+    _ = setup_health(app)
+    rest._app = app
+
     return rest, config
 
 
 def serve(config_file: str = None):
-    rest, config = setup_xpublish(config_file)
+    config = setup_config(config_file)
+    rest, config = setup_xpublish(config)
     rest.serve(
         **config.serve_kwargs()
     )
 
 
 def app():
-    rest, _ = setup_xpublish()
+    config = setup_config()
+    rest, _ = setup_xpublish(config, create_cluster_client=False)
     return rest.app
 
 

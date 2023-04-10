@@ -5,10 +5,13 @@ dependencies:
   - conda-forge::python >=3.8,<3.12
   - conda-forge::pip
 
+  - conda-forge::dask
+  - conda-forge::distributed
   - conda-forge::gunicorn
   - conda-forge::libnetcdf <4.9.1  # HDF5 bugs galore!
   - conda-forge::netCDF4
   - conda-forge::ruamel.yaml
+  - conda-forge::setproctitle
   - conda-forge::xarray
   # - conda-forge::xpublish
   # - conda-forge::xpublish_intake
