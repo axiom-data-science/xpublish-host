@@ -1,6 +1,5 @@
 from prometheus_client import multiprocess
 
-
 proc_name = 'xpublish'
 bind = "0.0.0.0:9000"
 workers = 4

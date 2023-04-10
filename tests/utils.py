@@ -3,9 +3,9 @@ from pathlib import Path
 import pytest
 import uvicorn
 import xarray as xr
-import xpublish
 from fastapi.testclient import TestClient
 
+import xpublish
 from xpublish_host.config import PluginConfig, RestConfig
 
 

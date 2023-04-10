@@ -4,9 +4,14 @@ import os
 import typing as t
 from pprint import pformat
 
-import xpublish
 from goodconf import GoodConf
-from pydantic import BaseModel, PositiveInt, PyObject
+from pydantic import (
+    BaseModel,
+    PositiveInt,
+    PyObject,
+)
+
+import xpublish
 
 L = logging.getLogger(__name__)
 
@@ -138,7 +143,7 @@ class RestConfig(GoodConf):
 
         # Only spawn a cluster if distributed is installed
         try:
-            from dask.distributed import Client
+            from dask.distributed import Client  # noqa
         except ImportError:
             L.warning("The dask 'distributed' library is not installed, no cluster support")
             return None

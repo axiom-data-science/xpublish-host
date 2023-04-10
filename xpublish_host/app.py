@@ -1,5 +1,5 @@
-import os
 import logging
+import os
 
 from fastapi import status
 from fastapi.responses import JSONResponse
@@ -47,7 +47,7 @@ def setup_metrics(app):
 
     try:
         from starlette_exporter import PrometheusMiddleware, handle_metrics
-        from starlette_exporter.optional_metrics import response_body_size, request_body_size
+        from starlette_exporter.optional_metrics import request_body_size, response_body_size
 
         app.add_middleware(
             PrometheusMiddleware,
