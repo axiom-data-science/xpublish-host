@@ -38,6 +38,7 @@ pip install xpublish_host
 
 * `/metrics` - Multi-process supported application metrics. To turn this off set the `XPD_DISABLE_METRICS` environment variable
 * `/health` - A health-check endpoint. To turn this off set the `XPD_DISABLE_HEALTH` environment variable
+* A set of `xpublish` Plugins (see Plugins section below)
 
 ## Usage
 
@@ -133,6 +134,81 @@ datasets_config:
       x_axis: 'lon'
       open_kwargs:
         parallel: false
+```
+
+### Plugins
+
+`xpublish-host` comes with a few Plugins to make your life easier. These will likely be abstracted out into their own repositories in the future if they see some actual usage.
+
+#### `DatasetsConfigPlugin`
+
+This plugin will dynamically load any configured datasets instead of requiring them to be loaded when `xpublish` is started. Combined with the top level `datasets_config` object, it allows mixing together static datasets that do not change and dynamic datasets that you may want to reload periodically.
+
+The `DatasetsConfigPlugin` plugin takes in the same config object that the top level `datasets_config` object takes in, a `DatasetConfig`. The `invalidate_after` argument is respected when loading a dataset through the plugin and is ignored if it is loaded through the root level `datasets_config`.
+
+Here is an example of how to configure an `xpublish` instance that will serve a `static` dataset that is loaded one on server start and a `dynamic` dataset that is reloaded every 10 seconds. It isn't reloaded on a schedule, it is reloaded on-request if the dataset is accessed after `invalidate_after` seconds has elapsed.
+
+```yaml
+publish_port: 9000
+cluster_config: null
+
+plugins_config:
+
+  zarr:
+    module: xpublish.plugins.included.zarr.ZarrPlugin
+    kwargs:
+      dataset_router_prefix: '/zarr'
+
+  dynamic:
+    module: xpublish_host.plugins.DatasetsConfigPlugin
+    kwargs:
+      datasets_config:
+        dynamic:
+          id: dynamic
+          title: Dynamic
+          description: Dynamic dataset re-loaded on request periodically
+          loader: xpublish_host.examples.datasets.simple
+          invalidate_after: 10
+
+datasets_config:
+  simple:
+    id: static
+    title: Static
+    description: Statis dataset that is never reloaded
+    loader: xpublish_host.examples.datasets.simple
+
+```
+
+You can run the above config file and take a look at what is produced. There are (2) datasets: `static` and `dynamic`. If you watch the logs and keep refreshing access to the `dynamic` dataset, it will re-load the dataset every `10` seconds.
+
+```shell
+$ python xpublish_host/app.py -c xpublish_host/examples/dynamic.yaml
+
+INFO:     Uvicorn running on http://0.0.0.0:9000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:42808 - "GET /datasets HTTP/1.1" 200 OK
+# The static dataset is already loaded
+INFO:     127.0.0.1:41938 - "GET /datasets/static/ HTTP/1.1" 200 OK
+# The dynamic dataset is loaded on first access
+INFO:xpublish_host.plugins:Loading dataset: dynamic
+INFO:     127.0.0.1:41938 - "GET /datasets/dynamic/ HTTP/1.1" 200 OK
+# Subsequent access to dynamic before [invalidate_after] seconds uses
+# the already loaded dataset
+INFO:     127.0.0.1:41938 - "GET /datasets/dynamic/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41938 - "GET /datasets/dynamic/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41938 - "GET /datasets/dynamic/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41938 - "GET /datasets/dynamic/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41938 - "GET /datasets/dynamic/ HTTP/1.1" 200 OK
+# Eventually [invalidate_after] seconds elapses and the dynamic
+# dataset is reloaded when the request is made
+INFO:xpublish_host.plugins:Loading dataset: dynamic
+INFO:     127.0.0.1:41938 - "GET /datasets/dynamic/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41938 - "GET /datasets/dynamic/ HTTP/1.1" 200 OK
+# The static dataset is never reloaded
+INFO:     127.0.0.1:41938 - "GET /datasets/static/ HTTP/1.1" 200 OK
+# This works when accessing datasets through other plugins as well
+INFO:xpublish_host.plugins:Loading dataset: dynamic
+INFO:     127.0.0.1:48092 - "GET /datasets/dynamic/zarr/.zmetadata HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48092 - "GET /datasets/dynamic/zarr/.zmetadata HTTP/1.1" 200 OK
 ```
 
 ### Running
