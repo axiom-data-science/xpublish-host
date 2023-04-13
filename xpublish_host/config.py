@@ -39,6 +39,7 @@ class DatasetConfig(BaseModel):
     loader: PyObject
     args: set[t.Any] = ()
     kwargs: dict[str, t.Any] = {}
+    invalidate_after: int | None = None
 
     def load(self):
         return self.loader(*self.args, **self.kwargs)

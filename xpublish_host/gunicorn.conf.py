@@ -9,6 +9,7 @@ accesslog = '-'
 errorlog = '-'
 loglevel = 'info'
 capture_output = True
+preload_app = True
 
 
 def child_exit(server, worker):

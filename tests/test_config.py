@@ -3,7 +3,7 @@ import os
 
 import pytest
 
-from xpublish_host.config import DatasetConfig
+from xpublish_host.config import DatasetConfig, PluginConfig, RestConfig
 
 from .utils import HostTesting, simple_loader
 
@@ -37,6 +37,44 @@ class TestSimpleDatasetKwargs(SimpleDataset):
                 loader=loader,
             )
         }
+
+
+class TestDynamicDatasetKwargs(SimpleDataset):
+
+    @pytest.fixture(scope='module')
+    def id(self, rest_config):
+        yield 'dynamic'
+
+    @pytest.fixture(scope='module')
+    def plugins_config(self, loader):
+        return {
+            'zarr': PluginConfig(
+                module='xpublish.plugins.included.zarr.ZarrPlugin',
+                kwargs=dict(
+                    dataset_router_prefix='/zarr'
+                )
+            ),
+            'dynamic': PluginConfig(
+                module='xpublish_host.plugins.DatasetsConfigPlugin',
+                kwargs=dict(
+                    datasets_config={
+                        'dyanmic': DatasetConfig(
+                            id='dynamic',
+                            title='TestTitle',
+                            description='TestDescription',
+                            loader=loader,
+                        )
+                    }
+                )
+            )
+        }
+
+    @pytest.fixture(scope='module')
+    def rest_config(self, datasets_config, plugins_config):
+        config = RestConfig(
+            plugins_config=plugins_config,
+        )
+        yield config
 
 
 class TestDatasetConfigJsonEnv(SimpleDataset):

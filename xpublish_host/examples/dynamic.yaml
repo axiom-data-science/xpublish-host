@@ -1,0 +1,54 @@
+---
+
+publish_port: 9000
+cluster_config: null
+
+plugins_config:
+
+  zarr:
+    module: xpublish.plugins.included.zarr.ZarrPlugin
+    kwargs:
+      dataset_router_prefix: '/zarr'
+
+  dynamic:
+    module: xpublish_host.plugins.DatasetsConfigPlugin
+    kwargs:
+      datasets_config:
+        simple:
+          id: simple_dynamic
+          title: A Simple Dataset
+          description: This is just a simple little dataset with 3 values
+          loader_delay: true
+          loader: xpublish_host.examples.datasets.simple
+          invalidate_after: 10
+
+        kwargs:
+          id: kwargs_dynamic
+          title: A Simple Dataset using args and kwargs
+          description: This is a dataset accepting args and kwargs
+          loader_delay: true
+          loader: xpublish_host.examples.datasets.kwargs
+          invalidate_after: 10
+          args:
+            - temperature
+          kwargs:
+            values: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+
+datasets_config:
+  simple:
+    id: simple_static
+    title: A Simple Dataset
+    description: This is just a simple little dataset with 3 values
+    loader_delay: true
+    loader: xpublish_host.examples.datasets.simple
+
+  kwargs:
+    id: kwargs_static
+    title: A Simple Dataset using args and kwargs
+    description: This is a dataset accepting args and kwargs
+    loader_delay: true
+    loader: xpublish_host.examples.datasets.kwargs
+    args:
+      - temperature
+    kwargs:
+      values: [0, 1, 2, 3, 4, 5, 6, 7, 8]
