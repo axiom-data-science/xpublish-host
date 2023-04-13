@@ -3,7 +3,11 @@ import os
 
 import pytest
 
-from xpublish_host.config import DatasetConfig, PluginConfig, RestConfig
+from xpublish_host.config import (
+    DatasetConfig,
+    PluginConfig,
+    RestConfig,
+)
 
 from .utils import HostTesting, simple_loader
 

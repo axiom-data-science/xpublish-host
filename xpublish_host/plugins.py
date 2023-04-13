@@ -2,6 +2,7 @@ import logging
 from datetime import datetime, timezone
 
 import xarray as xr
+
 from xpublish import Plugin, hookimpl
 from xpublish_host.config import DatasetConfig
 
@@ -45,9 +46,9 @@ class DatasetsConfigPlugin(Plugin):
             return self.datasets[dataset_id]
 
         # If we got here, load the dataset
-        now = datetime.now(timezone.utc).timestamp()
         L.info(f"Loading dataset: {dsc.id}")
-        dataset =  dsc.load()
+        now = datetime.now(timezone.utc).timestamp()
+        dataset = dsc.load()
 
         self.datasets[dataset_id] = dataset
         self.datasets_loaded[dataset_id] = now
