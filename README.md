@@ -39,6 +39,7 @@ pip install xpublish_host
 * `/metrics` - Multi-process supported application metrics. To turn this off set the `XPD_DISABLE_METRICS` environment variable
 * `/health` - A health-check endpoint. To turn this off set the `XPD_DISABLE_HEALTH` environment variable
 * `DatasetsConfigPlugin` - An `xpublish` Plugin for loading datasets dynamically from confgiuration files
+* A set of python modules for use as the `loader` argument in a `DatasetsConfig` for loading commonly used `xarray` sources (`open_mfdataset` currently supported).
 
 ## Usage
 
