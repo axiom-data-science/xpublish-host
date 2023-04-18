@@ -1,6 +1,5 @@
-import json
-import os
 import logging
+import os
 
 import pytest
 
@@ -59,7 +58,7 @@ class TestDatasetConfigEnvVars(SimpleDataset):
             f'XPUB_PLUGINS_CONFIG__DCONFIG__KWARGS__DATASETS_CONFIG__{dataset_id}__LOADER': f"{loader.__module__}.{loader.__name__}",
         }
 
-        for k,v in envvars.items():
+        for k, v in envvars.items():
             os.environ[k] = v
 
     @pytest.fixture(scope='module')

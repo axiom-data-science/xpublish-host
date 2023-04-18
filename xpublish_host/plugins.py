@@ -1,24 +1,14 @@
-import os
-import json
 import logging
 import typing as t
 from datetime import datetime, timezone
 
 import xarray as xr
-from goodconf import GoodConf
-from xpublish import Plugin, hookimpl
 from pydantic import BaseModel, PyObject
 
+from xpublish import Plugin, hookimpl
 from xpublish_host.config import RestConfig
 
 L = logging.getLogger(__name__)
-
-
-from pydantic import BaseSettings
-
-def loader(settings: BaseSettings) -> dict[str, t.Any]:
-    breakpoint()
-    return {}
 
 
 class DatasetConfig(BaseModel):

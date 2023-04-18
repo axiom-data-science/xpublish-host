@@ -1,4 +1,3 @@
-import json
 import ipaddress as ip
 import logging
 import os
@@ -74,7 +73,7 @@ class RestConfig(GoodConf):
     class Config:
         file_env_file = os.environ.get('XPUB_CONFIG_FILE', 'config.yaml')
         env_file = os.environ.get('XPUB_ENV_FILES', '.env')
-        env_file_encoding='utf-8'
+        env_file_encoding = 'utf-8'
         env_prefix = 'XPUB_'
         env_nested_delimiter = '__'
 
