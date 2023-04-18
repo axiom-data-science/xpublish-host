@@ -9,14 +9,14 @@ With ~50 netCDF-based datasets to be published through `xpublish`, Axiom needed 
 ## Goals
 
 * Standardize the configuration of an `xpublish` deployment (plugins, ports, cache, dask clusters, datasets, etc.) using config files and environmental variables, not python code.
-* Standardize on a core set of `FastAPI` observability middleware (metrics, etc.),
+* Standardize on a core set of `FastAPI` observability middleware (metrics, monitoring, etc.),
 * Provide a pre-built Docker image to run an opinionated `xpublish` deployment.
 
 ## Ideas
 
 `xpublish-host` makes no assumptions about the datasets you want to publish through `xpublish` and only requires the path to an importable python function that returns the object you want to be passed in as an argument to `xpublish.Rest`. This will allow `xpublish-host` to support datasets in addition to `xarray.Dataset` in the future, such as Parquet files.
 
-We maintain an `xpublish-inventory` repository that defines YAML configurations and python functions for each `xpublish` dataset we want to publish. Those YAML configurations and python functions are installed as library into the `xpublish-host` container on deployment. There are better ways to do this (auto-discovery) but you have to start somewhere.
+As compliment to `xpulbish-host`, we maintain a repository that defines YAML configurations and python functions for each `xpublish` dataset we want to publish through `xpublish-host`. Those YAML configurations and python functions are installed as library into the `xpublish-host` container on deployment. There are better ways to do this (auto-discovery) but you have to start somewhere.
 
 ## Installation
 
@@ -38,7 +38,7 @@ pip install xpublish_host
 
 * `/metrics` - Multi-process supported application metrics. To turn this off set the `XPD_DISABLE_METRICS` environment variable
 * `/health` - A health-check endpoint. To turn this off set the `XPD_DISABLE_HEALTH` environment variable
-* A set of `xpublish` Plugins (see Plugins section below)
+* `DatasetsConfigPlugin` - An `xpublish` Plugin for loading datasets dynamically from confgiuration files
 
 ## Usage
 
@@ -46,7 +46,7 @@ pip install xpublish_host
 
 The configuration is managed using `Pydantic` [BaseSettings](https://docs.pydantic.dev/usage/settings/) and [GoodConf](https://github.com/lincolnloop/goodconf/) for loading configuration from files.
 
-The `xpublish_host` configuration can be set in a few ways
+The `xpublish-host` configuration can be set in a few ways
 
 * **Environmental variables** - prefixed with `XPUB_`, they map directly to the `pydantic` settings classes,
 * **Environment files** - Load environmental variables from a file. Uses `XPUB_ENV_FILES` to control the location of this file if it is defined. See the [`Pydantic` docs](https://docs.pydantic.dev/usage/settings/#dotenv-env-support) for more information,
@@ -59,7 +59,7 @@ There are three Settings classes:
 * `DatasetConfig` - configure the datasets available to `xpublish`,
 * `RestConfig` - configure how the `xpublish` instance is run, including the `PluginConfig` and `DatasetConfig`.
 
-The best way to get familiar with which configuration options are available (until the documentation catches up) is to look at the actually configuration classes in `xpublish_host/config.py` and the tests in `tests/test_config.py`.
+The best way to get familiar with which configuration options are available (until the documentation catches up) is to look at the actually configuration classes in `xpublish_host/config.py` and the tests in `tests/test_config.py` and `tests/utils.py`
 
 A feature-full configuration is as follows, which includes the defaults for each field.
 
@@ -94,10 +94,40 @@ plugins_load_defaults: true
 # default plugins. These will replace any auto-discovered plugins.
 # The keys here (pc1) are not important and are not used internally
 plugins_config:
-  pc1:
+
+  zarr:
     module: xpublish.plugins.included.zarr.ZarrPlugin
-      kwargs:
-        dataset_router_prefix: /zarr
+    kwargs:
+      dataset_router_prefix: /zarr
+
+  dconfig:
+    module: xpublish_host.plugins.DatasetsConfigPlugin
+    kwargs:
+      # Define all of the datasets to load into the xpublish instance.
+      # The keys here (dc1) are not important and are not used internally
+      # but it is good practice to make them equal to the dataset's id field
+      datasets_config:
+        dataset_id:
+          # The ID is used as the "key" of the dataset in `xpublish.Rest`
+          # i.e. xpublish.Rest({ [dataset.id]: [loader_function_return] })
+          id: dataset_id
+          title: Dataset Title
+          description: Dataset Description
+          # Path to an importable python function that returns the dataset you want
+          # to pass into `xpublish.Rest`
+          loader: [python module path]
+          # Arguments passed into the `loader` function
+          args:
+            - [loader arg1]
+            - [loader arg2]
+          # Keyword arguments passed into the `loader` function. See the `examples`
+          # directory for more details on how this can be used.
+          kwargs:
+            t_axis: 'time'
+            y_axis: 'lat'
+            x_axis: 'lon'
+            open_kwargs:
+              parallel: false
 
 # Keyword arguments to pass into `xpublish.Rest` as app_kws
 # i.e. xpublish.Rest(..., app_kws=app_config)
@@ -109,31 +139,6 @@ app_config:
 # i.e. xpublish.Rest(..., cache_kws=cache_config)
 cache_config:
   available_bytes: 1e11
-
-# Define all of the datasets to load into the xpublish instance.
-# The keys here (dc1) are not important and are not used internally
-datasets_config:
-  dc1:
-    # The ID is used as the "key" of the dataset in `xpublish.Rest`
-    # i.e. xpublish.Rest({ [dataset.id]: [loader_function_return] })
-    id: dataset_id
-    title: Dataset Title
-    description: Dataset Description
-    # Path to an importable python function that returns the dataset you want
-    # to pass into `xpublish.Rest`
-    loader: [python module path]
-    # Arguments passed into the `loader` function
-    args:
-      - [loader arg1]
-      - [loader arg2]
-    # Keyword arguments passed into the `loader` function. See the `examples`
-    # directory for more details on how this can be used.
-    kwargs:
-      t_axis: 'time'
-      y_axis: 'lat'
-      x_axis: 'lon'
-      open_kwargs:
-        parallel: false
 ```
 
 ### Plugins
@@ -142,11 +147,11 @@ datasets_config:
 
 #### `DatasetsConfigPlugin`
 
-This plugin will dynamically load any configured datasets instead of requiring them to be loaded when `xpublish` is started. Combined with the top level `datasets_config` object, it allows mixing together static datasets that do not change and dynamic datasets that you may want to reload periodically.
+This plugin is designed to programatically load datasets based on a configuration. It supports dynamically loading datasets on request rather than requiring them to be loaded when `xpublish` is started. It allows mixing together static datasets that do not change and dynamic datasets that you may want to reload periodically.
 
-The `DatasetsConfigPlugin` plugin takes in the same config object that the top level `datasets_config` object takes in, a `DatasetConfig`. The `invalidate_after` argument is respected when loading a dataset through the plugin and is ignored if it is loaded through the root level `datasets_config`.
+The `DatasetsConfigPlugin` plugin takes in a `datasets_config` object which is `dict[str, DatasetConfig]`.
 
-Here is an example of how to configure an `xpublish` instance that will serve a `static` dataset that is loaded one on server start and a `dynamic` dataset that is reloaded every 10 seconds. It isn't reloaded on a schedule, it is reloaded on-request if the dataset is accessed after `invalidate_after` seconds has elapsed.
+Here is an example of how to configure an `xpublish` instance that will serve a `static` dataset that is loaded once on server start and a `dynamic` dataset that is not reloaded on server start. It is loaded for the first time on first request and then reloaded every 10 seconds. It isn't reloaded on a schedule, it is reloaded on-request if the dataset has not been accessed after `invalidate_after` seconds has elapsed.
 
 ```yaml
 publish_port: 9000
@@ -157,26 +162,26 @@ plugins_config:
   zarr:
     module: xpublish.plugins.included.zarr.ZarrPlugin
     kwargs:
-      dataset_router_prefix: '/zarr'
+      dataset_router_prefix: /zarr
 
-  dynamic:
+  dconfig:
     module: xpublish_host.plugins.DatasetsConfigPlugin
     kwargs:
       datasets_config:
+
+        simple:
+          id: static
+          title: Static
+          description: Statis dataset that is never reloaded
+          loader: xpublish_host.examples.datasets.simple
+
         dynamic:
           id: dynamic
           title: Dynamic
           description: Dynamic dataset re-loaded on request periodically
           loader: xpublish_host.examples.datasets.simple
+          skip_initial_load: true
           invalidate_after: 10
-
-datasets_config:
-  simple:
-    id: static
-    title: Static
-    description: Statis dataset that is never reloaded
-    loader: xpublish_host.examples.datasets.simple
-
 ```
 
 You can run the above config file and take a look at what is produced. There are (2) datasets: `static` and `dynamic`. If you watch the logs and keep refreshing access to the `dynamic` dataset, it will re-load the dataset every `10` seconds.
@@ -205,7 +210,7 @@ INFO:     127.0.0.1:41938 - "GET /datasets/dynamic/ HTTP/1.1" 200 OK
 INFO:     127.0.0.1:41938 - "GET /datasets/dynamic/ HTTP/1.1" 200 OK
 # The static dataset is never reloaded
 INFO:     127.0.0.1:41938 - "GET /datasets/static/ HTTP/1.1" 200 OK
-# This works when accessing datasets through other plugins as well
+# This works when accessing datasets through other plugins as well (i.e. ZarrPlugin)
 INFO:xpublish_host.plugins:Loading dataset: dynamic
 INFO:     127.0.0.1:48092 - "GET /datasets/dynamic/zarr/.zmetadata HTTP/1.1" 200 OK
 INFO:     127.0.0.1:48092 - "GET /datasets/dynamic/zarr/.zmetadata HTTP/1.1" 200 OK
@@ -235,8 +240,8 @@ INFO:     Uvicorn running on http://0.0.0.0:9000 (Press CTRL+C to quit)python
 Load environmental variables from a custom .env file
 ```python
 >>> import os
+>>> os.environ['XPUB_ENV_FILES'] = 'xpublish_host/examples/example.env'
 >>> from xpublish_host.app import serve
->>> os.environ['XPUB_ENV_FILES'] = '/home/user/.env'
 >>> serve()
 
 INFO:goodconf:No config file specified. Loading with environment variables.
@@ -247,8 +252,8 @@ INFO:     Uvicorn running on http://0.0.0.0:9000 (Press CTRL+C to quit)python
 Set the default location to load a configuration file from
 ```python
 >>> import os
+>>> os.environ['XPUB_CONFIG_FILE'] = 'xpublish_host/examples/example.yaml'
 >>> from xpublish_host.app import serve
->>> os.environ['XPUB_CONFIG_FILE'] = 'config.yaml'
 >>> serve()
 
 INFO:goodconf:Loading config from xpublish_host/examples/example.yaml
@@ -256,42 +261,65 @@ INFO:goodconf:Loading config from xpublish_host/examples/example.yaml
 INFO:     Uvicorn running on http://0.0.0.0:9000 (Press CTRL+C to quit)python
 ```
 
-You can also use the `RestConfig` and `DatasetConfig` objects directly to serve datasets through the API while mixing in configuration file as needed.
+###### `RestConfig`
 
-#### `RestConfig`
+You can also use the `RestConfig` objects directly to serve datasets through the API while mixing in configuration file as needed. If you using the API in this way without using a config file or environmental variables it is better to use the `xpublish` API directly instead.
 
 ```python
-from xpublish_host.config import RestConfig
+from xpublish_host.config import RestConfig, PluginConfig
+from xpublish_host.plugins import DatasetsConfigPlugin
 
-dc = DatasetConfig(
-    id='id',
-    title='title',
-    description='description',
-    loader='[python function path]',
+pc = PluginConfig(
+    module=DatasetsConfigPlugin,
+    kwargs=dict(
+        datasets_config=dict(
+            simple=dict(
+                id='simple',
+                title='title',
+                description='description',
+                loader='xpublish_host.examples.datasets.simple',
+            ),
+            kwargs=dict(
+                id='kwargs',
+                title='title',
+                description='description',
+                loader='xpublish_host.examples.datasets.kwargs',
+                args=('temperature',),
+                kwargs=dict(
+                  values=[0, 1, 2, 3, 4, 5, 6, 7, 8]
+                )
+            )
+        )
+    )
 )
 
-rc = RestConfig(datasets_config={'ds': dc})
-rc.load('[config_file]')  # optionally load a configuration file
+rc = RestConfig(
+    load=True,
+    plugins_config={
+        'dconfig': pc
+    }
+)
+
 rest = rc.setup()  # This returns an `xpublish.Rest` instance
 rest.serve(
     host='0.0.0.0',
     port=9000,
     log_level='debug',
 )
+
 ```
 
-#### `DatsetConfig`
+###### `DatasetConfig`
 
 If you are serving a single dataset there is a helper method `serve` on the `DatasetConfig` object.
 
 ```python
-from xpublish_host.config import DatasetConfig
-
+from xpublish_host.plugins import DatasetConfig
 dc = DatasetConfig(
     id='id',
     title='title',
     description='description',
-    loader='[python function path]',
+    loader='xpublish_host.examples.datasets.simple',
 )
 
 # Keyword arguments are passed into RestConfig and can include all of the
@@ -352,7 +380,7 @@ mkdir -p /tmp/xpub_metrics
 PROMETHEUS_MULTIPROC_DIR=/tmp/xpub_metrics XPUB_CONFIG_FILE=xpublish_host/examples/example.yaml gunicorn xpublish_host.app:app -c xpublish_host/gunicorn.conf.py
 ```
 
-Either way, `xpublish` will be running on port 9000 with (2) datasets: `simple` and `kwargs`. You can access the instance at `http://[host]:9000/datasets/`.
+Either way, `xpublish` will be running on port 9000 with (2) datasets: `simple` and `kwargs`. You can access the instance at `http://[host]:9000/datasets/`. Metrics are available at `http://[host]:9000/metrics`
 
 ##### Docker
 

@@ -63,21 +63,42 @@ def setup_metrics(app):
         raise
 
 
+# def setup_config(config_file: str = None, **setup_kwargs):
+#     env_config = os.environ.get('XPUB_ENV_FILES', None)
+
+#     # Load in any passed in config file, or use ENV variables
+#     # that override any defined in the env file
+#     if config_file:
+#         config = RestConfig(_env_file=env_config, load=False)
+#         config.load(config_file)
+#         return config
+
+#     # Look for environmental variable defining the location of a config file
+#     config_file = os.environ.get('XPUB_CONFIG_FILE', None)
+#     if config_file and os.path.exists(config_file):
+#         config = RestConfig(_env_file=env_config, load=False)
+#         config.load(config_file)
+#         return config
+
+#     return RestConfig(_env_file=env_config)
+
+
 def setup_config(config_file: str = None, **setup_kwargs):
-    config = RestConfig()
+    env_config = os.environ.get('XPUB_ENV_FILES', None)
+    config = RestConfig(_env_file=env_config)
 
     # Look for environmental variable defining the location
     # of a config file
-    env_config = os.environ.get('XPUB_CONFIG_FILE', None)
-    if env_config and os.path.exists(env_config):
-        config.load(env_config)
+    yaml_config = os.environ.get('XPUB_CONFIG_FILE', None)
+    if yaml_config and os.path.exists(yaml_config):
+        config.load(yaml_config)
 
     # Load in any passed in config file, or use ENV variables
     # that override any defined in the env file
     if config_file:
         config.load(config_file)
 
-    if not env_config and not config_file:
+    if not yaml_config and not config_file:
         config.load()
 
     return config

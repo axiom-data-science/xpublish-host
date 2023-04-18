@@ -10,6 +10,7 @@ dependencies:
   - conda-forge::gunicorn
   - conda-forge::libnetcdf <4.9.1  # HDF5 bugs galore!
   - conda-forge::netCDF4
+  - conda-forge::python-dotenv
   - conda-forge::ruamel.yaml
   - conda-forge::setproctitle
   - conda-forge::xarray

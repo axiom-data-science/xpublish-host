@@ -1,15 +1,15 @@
 import json
 import os
+import logging
 
 import pytest
 
-from xpublish_host.config import (
-    DatasetConfig,
-    PluginConfig,
-    RestConfig,
-)
+from xpublish_host.config import PluginConfig
+from xpublish_host.plugins import DatasetConfig
 
 from .utils import HostTesting, simple_loader
+
+L = logging.getLogger(__name__)
 
 
 class SimpleDataset(HostTesting):
@@ -29,153 +29,80 @@ class SimpleDataset(HostTesting):
         return load
 
 
-class TestSimpleDatasetKwargs(SimpleDataset):
+class TestDatasetConfigKwargs(SimpleDataset):
 
     @pytest.fixture(scope='module')
-    def datasets_config(self, loader):
-        return {
-            'ds1': DatasetConfig(
-                id='TestID',
-                title='TestTitle',
-                description='TestDescription',
-                loader=loader,
-            )
+    def datasets_config(self, dataset_id, loader):
+        dc = DatasetConfig(
+            id=dataset_id,
+            title='Title',
+            description='Description',
+            loader=loader,
+        )
+        yield { dataset_id: dc }
+
+
+class TestDatasetConfigEnvVars(SimpleDataset):
+
+    @pytest.fixture(scope='module')
+    def loader(self):
+        return simple_loader
+
+    @pytest.fixture(scope="module")
+    def env(self, dataset_id, loader):
+
+        envvars = {
+            'XPUB_PLUGINS_CONFIG__DCONFIG__MODULE': 'xpublish_host.plugins.DatasetsConfigPlugin',
+            f'XPUB_PLUGINS_CONFIG__DCONFIG__KWARGS__DATASETS_CONFIG__{dataset_id}__ID': dataset_id,
+            f'XPUB_PLUGINS_CONFIG__DCONFIG__KWARGS__DATASETS_CONFIG__{dataset_id}__TITLE': 'Title',
+            f'XPUB_PLUGINS_CONFIG__DCONFIG__KWARGS__DATASETS_CONFIG__{dataset_id}__DESCRIPTION': 'Description',
+            f'XPUB_PLUGINS_CONFIG__DCONFIG__KWARGS__DATASETS_CONFIG__{dataset_id}__LOADER': f"{loader.__module__}.{loader.__name__}",
         }
 
-
-class TestDynamicDatasetKwargs(SimpleDataset):
-
-    @pytest.fixture(scope='module')
-    def id(self, rest_config):
-        yield 'dynamic'
+        for k,v in envvars.items():
+            os.environ[k] = v
 
     @pytest.fixture(scope='module')
-    def plugins_config(self, loader):
+    def plugins_config(self):
         return {
             'zarr': PluginConfig(
                 module='xpublish.plugins.included.zarr.ZarrPlugin',
                 kwargs=dict(
                     dataset_router_prefix='/zarr'
                 )
-            ),
-            'dynamic': PluginConfig(
-                module='xpublish_host.plugins.DatasetsConfigPlugin',
+            )
+        }
+
+
+class TestDatasetConfigEnvFile(SimpleDataset):
+
+    @pytest.fixture(scope='module')
+    def loader(self):
+        return simple_loader
+
+    @pytest.fixture(scope='module')
+    def env(self, dataset_id, tmpdir_factory, loader):
+        fn = tmpdir_factory.mktemp("config").join(".env")
+
+        envvars = [
+            'XPUB_PLUGINS_CONFIG__DCONFIG__MODULE=xpublish_host.plugins.DatasetsConfigPlugin',
+            f'XPUB_PLUGINS_CONFIG__DCONFIG__KWARGS__DATASETS_CONFIG__{dataset_id}__ID={dataset_id}',
+            f'XPUB_PLUGINS_CONFIG__DCONFIG__KWARGS__DATASETS_CONFIG__{dataset_id}__TITLE=Title',
+            f'XPUB_PLUGINS_CONFIG__DCONFIG__KWARGS__DATASETS_CONFIG__{dataset_id}__DESCRIPTION=Description',
+            f'XPUB_PLUGINS_CONFIG__DCONFIG__KWARGS__DATASETS_CONFIG__{dataset_id}__LOADER={loader.__module__}.{loader.__name__}',
+        ]
+        with fn.open('wt') as f:
+            f.writelines([ f'{e}\n' for e in envvars] )
+
+        os.environ['XPUB_ENV_FILES'] = str(fn)
+
+    @pytest.fixture(scope='module')
+    def plugins_config(self):
+        return {
+            'zarr': PluginConfig(
+                module='xpublish.plugins.included.zarr.ZarrPlugin',
                 kwargs=dict(
-                    datasets_config={
-                        'dyanmic': DatasetConfig(
-                            id='dynamic',
-                            title='TestTitle',
-                            description='TestDescription',
-                            loader=loader,
-                        )
-                    }
+                    dataset_router_prefix='/zarr'
                 )
-            )
-        }
-
-    @pytest.fixture(scope='module')
-    def rest_config(self, datasets_config, plugins_config):
-        config = RestConfig(
-            plugins_config=plugins_config,
-        )
-        yield config
-
-
-class TestDatasetConfigJsonEnv(SimpleDataset):
-
-    @pytest.fixture(scope='module')
-    def loader(self):
-        return simple_loader
-
-    @pytest.fixture(scope="module")
-    def env(self, loader):
-        dsconfig = {
-            'ds1': dict(
-                id='TestID',
-                title='TestTitle',
-                description='TestDescription',
-                loader=f'{loader.__module__}.{loader.__name__}',
-            )
-        }
-
-        os.environ['XPUB_DATASETS_CONFIG'] = json.dumps(dsconfig)
-
-
-class TestDatasetConfigEnv(SimpleDataset):
-
-    @pytest.fixture(scope='module')
-    def loader(self):
-        return simple_loader
-
-    @pytest.fixture(scope="module")
-    def env(self, loader):
-        os.environ['XPUB_DATASETS_CONFIG__DS1__ID'] = 'TestID'
-        os.environ['XPUB_DATASETS_CONFIG__DS1__TITLE'] = 'TestTitle'
-        os.environ['XPUB_DATASETS_CONFIG__DS1__DESCRIPTION'] = 'TestDescription'
-        os.environ['XPUB_DATASETS_CONFIG__DS1__LOADER'] = f'{loader.__module__}.{loader.__name__}'
-
-
-class TestLoaderOnlyEnv(SimpleDataset):
-
-    @pytest.fixture(scope='module')
-    def loader(self):
-        return simple_loader
-
-    @pytest.fixture(scope="module")
-    def env(self, loader):
-        os.environ['XPUB_DATASETS_CONFIG__DS1__LOADER'] = f'{loader.__module__}.{loader.__name__}'
-
-    @pytest.fixture(scope='module')
-    def datasets_config(self, env):
-        return {
-            'ds1': dict(
-                id='TestID',
-                title='TestTitle',
-                description='TestDescription',
-            )
-        }
-
-
-class TestDatasetConfigFile(SimpleDataset):
-
-    @pytest.fixture(scope='module')
-    def loader(self):
-        return simple_loader
-
-    @pytest.fixture(scope='module')
-    def env(self, tmpdir_factory, loader):
-        fn = tmpdir_factory.mktemp("config").join(".env")
-
-        with fn.open('wt') as f:
-            f.write(f'XPUB_DATASETS_CONFIG__DS1__LOADER="{loader.__module__}.{loader.__name__}"')
-            f.write('XPUB_DATASETS_CONFIG__DS1__ID="TestID"')
-            f.write('XPUB_DATASETS_CONFIG__DS1__TITLE="TestTitle"')
-            f.write('XPUB_DATASETS_CONFIG__DS1__DESCRIPTION="TestDescription"')
-
-        os.environ['XPUB_ENV_FILES'] = str(fn)
-
-
-class TestLoaderOnlyFile(SimpleDataset):
-
-    @pytest.fixture(scope='module')
-    def loader(self):
-        return simple_loader
-
-    @pytest.fixture(scope='module')
-    def env(self, tmpdir_factory, loader):
-        fn = tmpdir_factory.mktemp("config").join(".env")
-
-        with fn.open('wt') as f:
-            f.write(f'XPUB_DATASETS_CONFIG__DS1__LOADER="{loader.__module__}.{loader.__name__}"')
-
-        os.environ['XPUB_ENV_FILES'] = str(fn)
-
-    @pytest.fixture(scope='module')
-    def datasets_config(self, env):
-        return {
-            'ds1': dict(
-                id='TestID',
-                title='TestTitle',
-                description='TestDescription',
             )
         }

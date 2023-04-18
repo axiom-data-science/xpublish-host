@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pytest
@@ -99,21 +100,27 @@ class HostTesting:
         pass
 
     @pytest.fixture(scope='module')
-    def plugins_config(self):
+    def plugins_config(self, datasets_config):
         return {
             'zarr': PluginConfig(
                 module='xpublish.plugins.included.zarr.ZarrPlugin',
                 kwargs=dict(
                     dataset_router_prefix='/zarr'
                 )
+            ),
+            'dconfig': PluginConfig(
+                module='xpublish_host.plugins.DatasetsConfigPlugin',
+                kwargs=dict(
+                    datasets_config=datasets_config
+                )
             )
         }
 
     @pytest.fixture(scope='module')
-    def rest_config(self, datasets_config, plugins_config):
+    def rest_config(self, env, plugins_config):
         config = RestConfig(
-            datasets_config=datasets_config,
             plugins_config=plugins_config,
+            _env_file=os.environ.get('XPUB_ENV_FILES', None)
         )
         yield config
 
@@ -130,11 +137,11 @@ class HostTesting:
         return {}
 
     @pytest.fixture(scope='module')
-    def id(self, rest_config):
-        yield list(rest_config.datasets_config.values())[0].id
+    def dataset_id(self):
+        return 'ds'
 
     @pytest.fixture(scope='module')
-    def client(self, rest):
+    def client(self, env, rest):
         client = TestClient(rest.app)
         yield client
 
@@ -144,17 +151,17 @@ class HostTesting:
     def test_plugins(self, client):
         plugins_check(client)
 
-    def test_datasets(self, id, client):
-        datasets_check(client, id)
+    def test_datasets(self, dataset_id, client):
+        datasets_check(client, dataset_id)
 
-    def test_html(self, id, client):
-        html_check(client, id)
+    def test_html(self, dataset_id, client):
+        html_check(client, dataset_id)
 
     def test_docs(self, client):
         docs_check(client)
 
-    def test_zarr(self, id, client, varname):
-        zarr_check(client, id, varname)
+    def test_zarr(self, dataset_id, client, varname):
+        zarr_check(client, dataset_id, varname)
 
     def test_serve(self, rest_config, rest, mocker):
         serve_check(rest_config, rest, mocker)

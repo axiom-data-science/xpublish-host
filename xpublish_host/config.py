@@ -1,3 +1,4 @@
+import json
 import ipaddress as ip
 import logging
 import os
@@ -32,38 +33,10 @@ class PluginConfig(BaseModel):
     kwargs: dict[str, t.Any] = {}
 
 
-class DatasetConfig(BaseModel):
-    id: str
-    title: str
-    description: str
-    loader: PyObject
-    args: set[t.Any] = ()
-    kwargs: dict[str, t.Any] = {}
-    invalidate_after: int | None = None
-
-    def load(self):
-        return self.loader(*self.args, **self.kwargs)
-
-    def serve(self, **rest_kwargs):
-        """
-        Helper method to run a single dataset with configs
-        """
-        config = RestConfig(
-            datasets_config=[self],
-            **rest_kwargs
-        )
-        rest = config.setup()
-        rest.serve(
-            **config.serve_kwargs()
-        )
-
-
 class RestConfig(GoodConf):
     publish_host: ip.IPv4Address = '0.0.0.0'
     publish_port: PositiveInt = 9000
     log_level: str = 'debug'
-
-    datasets_config: dict[str, DatasetConfig] = {}
 
     plugins_load_defaults: bool = True
     plugins_config: dict[str, PluginConfig] = {}
@@ -99,7 +72,9 @@ class RestConfig(GoodConf):
     cluster_config: ClusterConfig | None = None
 
     class Config:
+        file_env_file = os.environ.get('XPUB_CONFIG_FILE', 'config.yaml')
         env_file = os.environ.get('XPUB_ENV_FILES', '.env')
+        env_file_encoding='utf-8'
         env_prefix = 'XPUB_'
         env_nested_delimiter = '__'
 
@@ -111,8 +86,10 @@ class RestConfig(GoodConf):
 
         plugs = self.setup_plugins()
 
+        # Start with no datasets, they are all loaded
+        # using the DatasetConfigPlugin
         rest = xpublish.Rest(
-            self.setup_datasets(),
+            None,
             plugins=load_defaults,
             app_kws=dict(self.app_config),
             cache_kws=dict(self.cache_config),
@@ -168,15 +145,9 @@ class RestConfig(GoodConf):
                 )
                 plugins[plug.name] = plug
             except BaseException as e:
-                L.exception(f"Could not load the {p} plugin: {e}")
+                L.error(f"Could not load the {p} plugin: {e}")
 
         return plugins
-
-    def setup_datasets(self):
-        datasets = {}
-        for d in self.datasets_config.values():
-            datasets[d.id] = d.load()
-        return datasets
 
     def setup(self, create_cluster_client=True):
         """
