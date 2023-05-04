@@ -8,6 +8,7 @@ worker_class = 'xpublish_host.app.XpdWorker'
 accesslog = '-'
 errorlog = '-'
 loglevel = 'info'
+timeout = 120
 capture_output = True
 preload_app = True
 

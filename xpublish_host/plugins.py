@@ -1,9 +1,15 @@
 import logging
+import os
 import typing as t
 from datetime import datetime, timezone
 
 import xarray as xr
-from pydantic import BaseModel, PyObject
+from goodconf import GoodConf
+from pydantic import (
+    BaseModel,
+    FilePath,
+    PyObject,
+)
 
 from xpublish import Plugin, hookimpl
 from xpublish_host.config import RestConfig
@@ -41,16 +47,16 @@ class DatasetConfig(BaseModel):
         )
 
 
-class DatasetsConfigPlugin(Plugin):
+class DatasetConfigFile(GoodConf):
+    datasets_config: dict[str, DatasetConfig] = {}
 
-    # class Config:
-    #     env_file = os.environ.get('XPUBDC_ENV_FILES', '.env')
-    #     env_prefix = 'XPUBDC_'
-    #     env_nested_delimiter = '__'
+
+class DatasetsConfigPlugin(Plugin):
 
     name = 'dconfig'
 
     datasets_config: dict[str, DatasetConfig] = {}
+    datasets_config_file: FilePath = None
 
     __datasets: dict = {}
     __datasets_loaded: dict = {}
@@ -58,10 +64,27 @@ class DatasetsConfigPlugin(Plugin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.load_config_file()
+
         for dsc in self.datasets_config.values():
             if dsc.skip_initial_load is False:
                 L.info(f"Loading dataset (initial): {dsc.id}")
                 _ = self.load_dataset(dsc)
+
+    def load_config_file(self):
+        # Load a config file into a dict of DatasetConfigs
+        dcf = DatasetConfigFile(load=True)
+
+        # Look for env file pointing to a config file
+        yaml_config = os.environ.get('XPUBDC_CONFIG_FILE', None)
+        if yaml_config and os.path.exists(yaml_config):
+            dcf.load(yaml_config)
+
+        if self.datasets_config_file and os.path.exists(self.datasets_config_file):
+            dcf.load(self.datasets_config_file)
+
+        if dcf.datasets_config:
+            self.datasets_config = dcf.datasets_config
 
     @hookimpl
     def get_datasets(self):
