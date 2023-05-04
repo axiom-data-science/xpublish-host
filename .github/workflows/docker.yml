@@ -29,7 +29,7 @@ jobs:
             axiom/xpublish-host
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
-            type=ref,event=branch,enable={{#if is_default_branch}}false{{else}}true{{/if}}
+            type=ref,event=branch,enable=${{ github.ref != format('refs/heads/{0}', 'main') }}
             type=ref,event=tag
 
       - name: Set up QEMU
