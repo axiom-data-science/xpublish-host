@@ -105,3 +105,37 @@ class TestDatasetConfigEnvFile(SimpleDataset):
                 )
             )
         }
+
+
+class TestDatasetConfigConfigFile(SimpleDataset):
+
+    @pytest.fixture(scope='module')
+    def plugins_config(self, tmpdir_factory):
+
+        yaml = """
+        datasets_config:
+            ds:
+                id: ds
+                title: Static
+                description: Statis dataset that is never reloaded
+                loader: xpublish_host.examples.datasets.simple
+        """
+
+        dsc = tmpdir_factory.mktemp("config").join("simple.yaml")
+        with dsc.open('wt') as f:
+            f.write(yaml)
+
+        return {
+            'zarr': PluginConfig(
+                module='xpublish.plugins.included.zarr.ZarrPlugin',
+                kwargs=dict(
+                    dataset_router_prefix='/zarr'
+                )
+            ),
+            'dconfig': PluginConfig(
+                module='xpublish_host.plugins.DatasetsConfigPlugin',
+                kwargs=dict(
+                    datasets_config_file=str(dsc)
+                )
+            )
+        }
