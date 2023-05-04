@@ -13,6 +13,8 @@ def load_mfdataset(
     file_glob: str,
     open_mfdataset_kwargs: t.Dict = {},
     file_limit: int | None = None,
+    skip_head_files: int | None = None,
+    skip_tail_files: int | None = None,
     computes: list[str] | None = None,
     chunks: dict[str, int] | None = None,
     axes: dict[str, str] | None = None,
@@ -33,10 +35,6 @@ def load_mfdataset(
     sel = sel or {}
     combine_by_coords = combine_by_coords or []
 
-    time_chunk = chunks.get('t', 24)
-    if file_limit:
-        time_chunk = min(file_limit, time_chunk)
-
     root = Path(root_path)
     files = sorted(
         [
@@ -44,6 +42,10 @@ def load_mfdataset(
         ],
         key=attrgetter('name')
     )
+
+    # Skip files from the front and back. If not defined
+    # (None) this won't change the files list.
+    files = files[skip_head_files:-skip_tail_files]
 
     # You know, for testing
     if file_limit:
