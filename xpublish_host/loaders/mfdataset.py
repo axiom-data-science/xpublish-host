@@ -21,6 +21,7 @@ def load_mfdataset(
     sort_by: dict[str, str] | None = None,
     isel: dict[str, slice] | None = None,
     sel: dict[str, slice] | None = None,
+    rechunk: bool = False,
     attrs_file_idx: int = -1,
     combine_by_coords: list[str | Path] = None,
     **kwargs
@@ -132,13 +133,11 @@ def load_mfdataset(
         L.info("Selecting...")
         ds = ds.sel(**sel)
 
-    L.info("Chunking...")
-    if chunks:
+    if rechunk is True and chunks:
+        L.info("Rechunking...")
         # Remove any dims that may have been squashed due to processing
         chunks = { k: v for k, v in chunks.items() if k in ds.dims }
         ds = ds.chunk(chunks)
-        # This was required when something else changed... working without it now
-        # (ds,) = xr.unify_chunks(ds)
 
     L.info("Computing and assigning axes as coordinates...")
     assigns = {}
