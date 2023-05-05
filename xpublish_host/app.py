@@ -45,20 +45,28 @@ def setup_metrics(app):
     if envvar not in os.environ:
         L.warning(f"{envvar} is not set! Metrics will not work if using gunicorn.")
 
+    app_name = os.environ.get("XPUB_METRICS_APP_NAME", "xpublish")
+    prefix_name = os.environ.get("XPUB_METRICS_PREFIX_NAME", "xpublish_host")
+    endpoint = os.environ.get("XPUB_METRICS_ENDPOINT", "/metrics")
+    environment = os.environ.get("XPUB_METRICS_ENVIRONMENT", "development")
+
     try:
         from starlette_exporter import PrometheusMiddleware, handle_metrics
         from starlette_exporter.optional_metrics import request_body_size, response_body_size
 
         app.add_middleware(
             PrometheusMiddleware,
-            app_name='xpublish_host',
-            prefix='xpub',
+            app_name=app_name,
+            prefix=prefix_name,
             buckets=[0.01, 0.1, 0.25, 0.5, 1.0],
             skip_paths=['/health', '/metrics', '/favicon.ico'],
             group_paths=False,
-            optional_metrics=[response_body_size, request_body_size]
+            optional_metrics=[response_body_size, request_body_size],
+            labels=dict(
+                environment=environment,
+            )
         )
-        app.add_route("/metrics", handle_metrics)
+        app.add_route(endpoint, handle_metrics)
     except BaseException:
         raise
 
