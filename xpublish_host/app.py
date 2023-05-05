@@ -30,11 +30,13 @@ def health_check(request):
 
 
 def setup_health(app):
-    if os.environ.get("XPUB_DISABLE_HEALTH"):
+    if os.environ.get("XPUB_HEALTH_DISABLE"):
         return
 
-    app.add_route("/health", health_check)
-    return
+    health = os.environ.get("XPUB_HEALTH_ENDPOINT", "/health")
+
+    app.add_route(health, health_check)
+    return health
 
 
 def get_dataset_label(request):
@@ -45,9 +47,9 @@ def get_dataset_label(request):
         return ''
 
 
-def setup_metrics(app):
+def setup_metrics(app, health_endpoint):
 
-    if os.environ.get("XPUB_DISABLE_METRICS"):
+    if os.environ.get("XPUB_METRICS_DISABLE"):
         return
 
     envvar = 'PROMETHEUS_MULTIPROC_DIR'
@@ -56,8 +58,8 @@ def setup_metrics(app):
 
     app_name = os.environ.get("XPUB_METRICS_APP_NAME", "xpublish")
     prefix_name = os.environ.get("XPUB_METRICS_PREFIX_NAME", "xpublish_host")
-    endpoint = os.environ.get("XPUB_METRICS_ENDPOINT", "/metrics")
     environment = os.environ.get("XPUB_METRICS_ENVIRONMENT", "development")
+    metrics = os.environ.get("XPUB_METRICS_ENDPOINT", "/metrics")
 
     try:
         from starlette_exporter import PrometheusMiddleware, handle_metrics
@@ -68,7 +70,7 @@ def setup_metrics(app):
             app_name=app_name,
             prefix=prefix_name,
             buckets=[0.01, 0.1, 0.25, 0.5, 1.0],
-            skip_paths=['/health', '/metrics', '/favicon.ico'],
+            skip_paths=[health_endpoint, metrics, '/favicon.ico'],
             group_paths=False,
             optional_metrics=[response_body_size, request_body_size],
             labels=dict(
@@ -76,7 +78,7 @@ def setup_metrics(app):
                 dataset=get_dataset_label,
             )
         )
-        app.add_route(endpoint, handle_metrics)
+        app.add_route(metrics, handle_metrics)
     except BaseException:
         raise
 
@@ -125,8 +127,8 @@ def setup_config(config_file: str = None, **setup_kwargs):
 def setup_xpublish(config: RestConfig = None, **setup_kwargs):
     rest = config.setup(**setup_kwargs)
     app = rest.app
-    _ = setup_metrics(app)
-    _ = setup_health(app)
+    health_endpoint = setup_health(app)
+    _ = setup_metrics(app, health_endpoint)
     rest._app = app
 
     return rest, config
