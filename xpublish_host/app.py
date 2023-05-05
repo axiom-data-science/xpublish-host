@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 
 from fastapi import status
 from fastapi.responses import JSONResponse
@@ -36,6 +37,14 @@ def setup_health(app):
     return
 
 
+def get_dataset_label(request):
+    try:
+        pattern = r'.*/datasets/(.+)/.*$'
+        return re.match(pattern, str(request.url)).group(1)
+    except BaseException as e:
+        return ''
+
+
 def setup_metrics(app):
 
     if os.environ.get("XPUB_DISABLE_METRICS"):
@@ -64,6 +73,7 @@ def setup_metrics(app):
             optional_metrics=[response_body_size, request_body_size],
             labels=dict(
                 environment=environment,
+                dataset=get_dataset_label,
             )
         )
         app.add_route(endpoint, handle_metrics)
