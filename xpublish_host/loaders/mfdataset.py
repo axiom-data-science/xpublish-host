@@ -13,8 +13,8 @@ def load_mfdataset(
     file_glob: str,
     open_mfdataset_kwargs: t.Dict = {},
     file_limit: int | None = None,
-    skip_head_files: int | None = None,
-    skip_tail_files: int | None = None,
+    skip_head_files: int | None = 0,
+    skip_tail_files: int | None = 0,
     computes: list[str] | None = None,
     chunks: dict[str, int] | None = None,
     axes: dict[str, str] | None = None,
@@ -45,7 +45,13 @@ def load_mfdataset(
 
     # Skip files from the front and back. If not defined
     # (None) this won't change the files list.
-    files = files[skip_head_files:-skip_tail_files]
+    if skip_tail_files:
+        skip_tail_files = skip_tail_files * -1
+    else:
+        # Prevents a zero from not working as expected
+        skip_tail_files = None
+
+    files = files[skip_head_files:skip_tail_files]
 
     # You know, for testing
     if file_limit:
