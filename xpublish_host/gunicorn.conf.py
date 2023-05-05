@@ -8,9 +8,11 @@ worker_class = 'xpublish_host.app.XpdWorker'
 accesslog = '-'
 errorlog = '-'
 loglevel = 'info'
-timeout = 120
 capture_output = True
 preload_app = True
+timeout = 0
+keepalive = 10
+graceful_timeout = 10
 
 
 def child_exit(server, worker):
