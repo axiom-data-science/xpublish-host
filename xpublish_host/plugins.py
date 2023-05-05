@@ -11,8 +11,30 @@ from pydantic import (
     PyObject,
 )
 
+
 from xpublish import Plugin, hookimpl
 from xpublish_host.config import RestConfig
+
+try:
+    from prometheus_client import Counter, Gauge
+    metrics = True
+    DATASET_LOAD_TIME = Gauge(
+        "dataset_load_time",
+        "How long it look to last load the dataset",
+        ["dataset"],
+    )
+    DATASET_LOAD_COUNT = Counter(
+        "dataset_load_count",
+        "How many times a dataset has been loaded",
+        ["dataset"],
+    )
+    DATASET_LOAD_WHEN = Gauge(
+        "dataset_load_when",
+        "When the dataset was last loaded",
+        ["dataset"],
+    )
+except ImportError:
+    metrics = False
 
 L = logging.getLogger(__name__)
 
@@ -120,8 +142,16 @@ class DatasetsConfigPlugin(Plugin):
         return dataset
 
     def load_dataset(self, config: DatasetConfig):
-        now = datetime.now(timezone.utc).timestamp()
+        now = datetime.utcnow().timestamp()
         dataset = config.load()
+
+        if metrics is True:
+            after = datetime.utcnow().timestamp()
+            elapsed = after - now
+            DATASET_LOAD_TIME.labels(config.id).set(elapsed)
+            DATASET_LOAD_WHEN.labels(config.id).set(after)
+            DATASET_LOAD_COUNT.labels(config.id).inc()
+
         self.__datasets[config.id] = dataset
         self.__datasets_loaded[config.id] = now
         return self.__datasets[config.id]
