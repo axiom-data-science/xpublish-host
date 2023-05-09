@@ -41,9 +41,9 @@ def setup_health(app):
 
 def get_dataset_label(request):
     try:
-        pattern = r'.*/datasets/(.+)/.*$'
+        pattern = r'^.*\/datasets\/(\w+)\/.*$'
         return re.match(pattern, str(request.url)).group(1)
-    except BaseException as e:
+    except BaseException:
         return ''
 
 
