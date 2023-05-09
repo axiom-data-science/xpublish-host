@@ -185,7 +185,7 @@ plugins_config:
         simple:
           id: static
           title: Static
-          description: Statis dataset that is never reloaded
+          description: Static dataset that is never reloaded
           loader: xpublish_host.examples.datasets.simple
 ```
 
@@ -197,7 +197,7 @@ datasets_config:
   simple:
     id: static
     title: Static
-    description: Statis dataset that is never reloaded
+    description: Static dataset that is never reloaded
     loader: xpublish_host.examples.datasets.simple
 ```
 
@@ -239,7 +239,7 @@ datasets_config:
   simple:
     id: static
     title: Static
-    description: Statis dataset that is never reloaded
+    description: Static dataset that is never reloaded
     loader: xpublish_host.examples.datasets.simple
 
   dynamic:
