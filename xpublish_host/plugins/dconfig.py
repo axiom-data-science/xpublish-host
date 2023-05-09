@@ -16,7 +16,8 @@ from xpublish_host.config import RestConfig
 
 try:
     from prometheus_client import Counter, Gauge
-    from xpublish_host.metrics import create_metric, DEFAULT_LABELS
+
+    from xpublish_host.metrics import DEFAULT_LABELS, create_metric
     metrics = True
     DATASET_LOAD_TIME = create_metric(
         Gauge,
