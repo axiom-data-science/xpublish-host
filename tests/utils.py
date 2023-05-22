@@ -11,8 +11,12 @@ from xpublish_host.config import PluginConfig, RestConfig
 
 
 def simple_loader(*args, **kwargs):
-    return xr.Dataset({'count': ('x', [1, 2, 3])})
-
+    return xr.Dataset(
+        {
+            'count': ('x', [1, 2, 3]),
+            'scalar': 1
+        }
+    )
 
 def versions_check(client):
     response = client.get('/versions')
