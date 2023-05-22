@@ -252,7 +252,7 @@ datasets_config:
 You can run the above config file and take a look at what is produced. There are (2) datasets: `static` and `dynamic`. If you watch the logs and keep refreshing access to the `dynamic` dataset, it will re-load the dataset every `10` seconds.
 
 ```shell
-$ python xpublish_host/app.py -c xpublish_host/examples/dynamic.yaml
+$ xpublish-host -c xpublish_host/examples/dynamic.yaml
 
 INFO:     Uvicorn running on http://0.0.0.0:9000 (Press CTRL+C to quit)
 INFO:     127.0.0.1:42808 - "GET /datasets HTTP/1.1" 200 OK
@@ -470,12 +470,12 @@ dc.serve(
 
 #### CLI (dev)
 
-When developing locally or in a non-production environment you can use helper CLI methods to run an `xpublish` server and optionally pass in the path to a configuration file:
+When developing locally or in a non-production environment you can use helper CLI methods to run an `xpublish` server and optionally pass in the path to a configuration file. Use the provided `xpublish-host` command (when installed through `setuptools`) or `python xpublish_host/app.py`, they are the same thing!
 
 Pass in a config file argument
 
 ```shell
-$ python xpublish_host/app.py -c xpublish_host/examples/example.yaml
+$ xpublish-host -c xpublish_host/examples/example.yaml
 
 INFO:goodconf:Loading config from xpublish_host/examples/example.yaml
 ...
@@ -485,7 +485,7 @@ INFO:     Uvicorn running on http://0.0.0.0:9000 (Press CTRL+C to quit)
 Pull config file from an environmental variable
 
 ```shell
-$ XPUB_CONFIG_FILE=xpublish_host/examples/example.yaml python xpublish_host/app.py
+$ XPUB_CONFIG_FILE=xpublish_host/examples/example.yaml xpublish-host
 
 INFO:goodconf:Loading config from xpublish_host/examples/example.yaml
 ...
