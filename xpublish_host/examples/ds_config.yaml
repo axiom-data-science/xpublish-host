@@ -1,0 +1,8 @@
+---
+
+datasets_config:
+  file:
+    id: file
+    title: Static
+    description: Static dataset that is never reloaded
+    loader: xpublish_host.examples.datasets.simple

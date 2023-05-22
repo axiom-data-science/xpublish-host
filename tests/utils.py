@@ -104,9 +104,6 @@ class HostTesting:
         return {
             'zarr': PluginConfig(
                 module='xpublish.plugins.included.zarr.ZarrPlugin',
-                kwargs=dict(
-                    dataset_router_prefix='/zarr'
-                )
             ),
             'dconfig': PluginConfig(
                 module='xpublish_host.plugins.DatasetsConfigPlugin',

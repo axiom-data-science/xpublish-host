@@ -66,9 +66,6 @@ class TestDatasetConfigEnvVars(SimpleDataset):
         return {
             'zarr': PluginConfig(
                 module='xpublish.plugins.included.zarr.ZarrPlugin',
-                kwargs=dict(
-                    dataset_router_prefix='/zarr'
-                )
             )
         }
 
@@ -100,9 +97,6 @@ class TestDatasetConfigEnvFile(SimpleDataset):
         return {
             'zarr': PluginConfig(
                 module='xpublish.plugins.included.zarr.ZarrPlugin',
-                kwargs=dict(
-                    dataset_router_prefix='/zarr'
-                )
             )
         }
 
@@ -117,7 +111,7 @@ class TestDatasetConfigConfigFile(SimpleDataset):
             ds:
                 id: ds
                 title: Static
-                description: Statis dataset that is never reloaded
+                description: Static dataset that is never reloaded
                 loader: xpublish_host.examples.datasets.simple
         """
 
@@ -128,9 +122,6 @@ class TestDatasetConfigConfigFile(SimpleDataset):
         return {
             'zarr': PluginConfig(
                 module='xpublish.plugins.included.zarr.ZarrPlugin',
-                kwargs=dict(
-                    dataset_router_prefix='/zarr'
-                )
             ),
             'dconfig': PluginConfig(
                 module='xpublish_host.plugins.DatasetsConfigPlugin',

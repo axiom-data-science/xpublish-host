@@ -95,8 +95,6 @@ plugins_config:
 
   zarr:
     module: xpublish.plugins.included.zarr.ZarrPlugin
-    kwargs:
-      dataset_router_prefix: /zarr
 
   dconfig:
     module: xpublish_host.plugins.DatasetsConfigPlugin

@@ -7,19 +7,19 @@ plugins_config:
 
   zarr:
     module: xpublish.plugins.included.zarr.ZarrPlugin
-    kwargs:
-      dataset_router_prefix: '/zarr'
 
   dconfig:
     module: xpublish_host.plugins.DatasetsConfigPlugin
     kwargs:
+
+      datasets_config_file: xpublish_host/examples/ds_config.yaml
 
       datasets_config:
 
         simple:
           id: static
           title: Static
-          description: Statis dataset that is never reloaded
+          description: Static dataset that is never reloaded
           loader: xpublish_host.examples.datasets.simple
 
         kwargs:
