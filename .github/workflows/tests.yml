@@ -22,8 +22,6 @@ jobs:
 
     - name: Setup Micromamba
       uses: mamba-org/setup-micromamba@v1
-      with:
-        environment-file: false
 
     - name: Python ${{ matrix.python-version }}
       shell: bash -l {0}
