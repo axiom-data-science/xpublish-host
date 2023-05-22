@@ -90,7 +90,9 @@ class DatasetsConfigPlugin(Plugin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.load_config_file()
+        config_file_datasets = self.load_config_file()
+
+        self.datasets_config.update(config_file_datasets)
 
         for dsc in self.datasets_config.values():
             if dsc.skip_initial_load is False:
@@ -110,7 +112,9 @@ class DatasetsConfigPlugin(Plugin):
             dcf.load(self.datasets_config_file)
 
         if dcf.datasets_config:
-            self.datasets_config = dcf.datasets_config
+            return dcf.datasets_config
+
+        return {}
 
     @hookimpl
     def get_datasets(self):

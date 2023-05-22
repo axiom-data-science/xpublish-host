@@ -16,19 +16,18 @@ authors = [
 ]
 requires-python = ">=3.8"
 classifiers = [
-    "Environment :: Web Environment",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Topic :: Internet :: WWW/HTTP",
-    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+  "Environment :: Web Environment",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Internet :: WWW/HTTP",
+  "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
 ]
 dynamic =[
   "version",
@@ -41,6 +40,8 @@ dependencies = [
 [project.urls]
 "Bug Tracker" = "https://github.com/axiom-data-science/xpublish-host/issues"
 "Homepage" = "https://github.com/axiom-data-science/xpublish-host"
+[project.scripts]
+xpublish-host = "xpublish_host:app.run"
 
 [tool.setuptools]
 packages = ["xpublish_host", "xpublish_host.examples"]

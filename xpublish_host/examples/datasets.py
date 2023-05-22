@@ -2,7 +2,12 @@ import xarray as xr
 
 
 def simple():
-    return xr.Dataset({'count': ('x', [1, 2, 3])})
+    return xr.Dataset(
+        {
+            'count': ('x', [1, 2, 3]),
+            'scalar': 1
+        }
+    )
 
 
 def kwargs(varname, values=None):

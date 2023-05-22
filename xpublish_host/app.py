@@ -148,7 +148,7 @@ def app():
     return rest.app
 
 
-if __name__ == '__main__':
+def run():
     import argparse
     parser = argparse.ArgumentParser("xpublish_host_serve")
     parser.add_argument("-c", "--config", default=None, help="Path to a config file", type=str)
@@ -157,3 +157,7 @@ if __name__ == '__main__':
     if args.config and not os.path.exists(args.config):
         raise ValueError(f"File {args.config} not found")
     serve(config_file=args.config)
+
+
+if __name__ == '__main__':
+    run()

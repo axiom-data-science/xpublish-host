@@ -11,7 +11,12 @@ from xpublish_host.config import PluginConfig, RestConfig
 
 
 def simple_loader(*args, **kwargs):
-    return xr.Dataset({'count': ('x', [1, 2, 3])})
+    return xr.Dataset(
+        {
+            'count': ('x', [1, 2, 3]),
+            'scalar': 1
+        }
+    )
 
 
 def versions_check(client):
@@ -104,9 +109,6 @@ class HostTesting:
         return {
             'zarr': PluginConfig(
                 module='xpublish.plugins.included.zarr.ZarrPlugin',
-                kwargs=dict(
-                    dataset_router_prefix='/zarr'
-                )
             ),
             'dconfig': PluginConfig(
                 module='xpublish_host.plugins.DatasetsConfigPlugin',
