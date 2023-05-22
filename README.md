@@ -209,7 +209,7 @@ plugins_config:
       datasets_config_file: datasets.yaml
 ```
 
-You can also mix and match between in-line configurations and file-based dataset configurations. Always be sure the `id` field is unique for each defined dataset or they will overwrite each other, with the in-line definitions taking precedence.
+You can also mix and match between in-line configurations and file-based dataset configurations. Always be sure the `id` field is unique for each defined dataset or they will overwrite each other, with config file definitions taking precedence.
 
 ```yaml
 plugins_config:
