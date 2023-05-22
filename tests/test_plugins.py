@@ -1,5 +1,5 @@
-import logging
 import io
+import logging
 
 import pandas as pd
 import pytest
@@ -70,7 +70,7 @@ class TestDataPoints(SimpleDataset):
 
         df = pd.read_parquet(io.BytesIO(response.content))
         assert 'count' in df
-        assert (df['count'] == pd.Series([1,2,3])).all()
+        assert (df['count'] == pd.Series([1, 2, 3])).all()
 
     def test_scalar(self, dataset_id, client):
         response = client.get(

@@ -18,6 +18,7 @@ def simple_loader(*args, **kwargs):
         }
     )
 
+
 def versions_check(client):
     response = client.get('/versions')
     assert response.status_code == 200
