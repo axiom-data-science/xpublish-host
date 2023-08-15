@@ -24,4 +24,10 @@ def load_dataset_zarr(json_path: str | Path, chunks=None):
         chunks=chunks,
     )
 
+    # remove chunks encoding, same issue as above
+    # https://github.com/xpublish-community/xpublish/issues/207
+    for varname in ds.data_vars:
+        if ds[varname].ndim >= 3:
+            del ds[varname].encoding["chunks"]
+
     return ds
