@@ -12,10 +12,10 @@ def load_dataset_zarr(json_path: str | Path, chunks=None):
     # encoding and dask arrays
     # https://github.com/xpublish-community/xpublish/issues/207
     chunks = chunks or {}
-    
-    print(f"Chunks are {chunks}.")
-    
-    print(f"using json from {json_path}")
+
+    L.info(f"Chunks are {chunks}.")
+
+    L.info(f"using json from {json_path}")
 
     ds = xr.open_dataset(
         "reference://", engine="zarr",
@@ -30,9 +30,11 @@ def load_dataset_zarr(json_path: str | Path, chunks=None):
 
     # remove chunks encoding, same issue as above
     # https://github.com/xpublish-community/xpublish/issues/207
-    print("removing chunks from all variable encoding")
-    for varname in ds.data_vars:
-        del ds[varname].encoding["chunks"]
+    L.info("removing chunks from all variable encoding...")
+    for varname in ds.variables:
+        if "chunks" in ds[varname].encoding:
+            L.info(f"removing chunks from {varname}")
+            del ds[varname].encoding["chunks"]
 
     # ds = ds.reset_encoding()
     return ds
