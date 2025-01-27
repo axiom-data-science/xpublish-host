@@ -43,7 +43,7 @@ class DataFormat(str, Enum):
 class DataPointsPlugin(Plugin):
     """Adds an Data Point Extraction endpoint"""
 
-    name = 'data_points'
+    name: str = 'data_points'  # Add type annotation
 
     dataset_router_prefix: str = '/data_points'
     dataset_router_tags: Sequence[str] = ['data_points']

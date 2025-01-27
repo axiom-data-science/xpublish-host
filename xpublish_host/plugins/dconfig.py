@@ -5,11 +5,8 @@ from datetime import datetime, timezone
 
 import xarray as xr
 from goodconf import GoodConf
-from pydantic import (
-    BaseModel,
-    FilePath,
-    PyObject,
-)
+from pydantic import BaseModel, FilePath
+from pydantic.types import ImportString
 
 from xpublish import Plugin, hookimpl
 from xpublish_host.config import RestConfig
@@ -47,7 +44,7 @@ class DatasetConfig(BaseModel):
     id: str
     title: str
     description: str
-    loader: PyObject
+    loader: ImportString
     args: list[t.Any] = ()
     kwargs: dict[str, t.Any] = {}
     invalidate_after: int | None = None
@@ -79,7 +76,7 @@ class DatasetConfigFile(GoodConf):
 
 class DatasetsConfigPlugin(Plugin):
 
-    name = 'dconfig'
+    name: t.ClassVar[str] = 'dconfig'
 
     datasets_config: dict[str, DatasetConfig] = {}
     datasets_config_file: FilePath = None
