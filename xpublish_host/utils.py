@@ -7,8 +7,6 @@ from typing import (
     TypeVar,
 )
 
-from pydantic import conlist
-
 
 class TypeParametersMemoizer(type):
     """
@@ -45,9 +43,12 @@ class CommaSeparatedList(Generic[T]):
         yield cls.validate
 
     @classmethod
-    def validate(cls, v: str | List[str]):
+    def validate(cls, v: str | List[str], values=None, field=None):
         if isinstance(v, str):
             v = v.split(",")
         else:
             v = list(itertools.chain.from_iterable((x.split(",") for x in v)))
-        return conlist(str, min_items=1)(list(map(str.strip, v)))
+        v = list(map(str.strip, v))
+        if len(v) < 1:
+            raise ValueError("List must contain at least one item")
+        return v
