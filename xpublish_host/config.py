@@ -5,11 +5,8 @@ import typing as t
 from pprint import pformat
 
 from goodconf import GoodConf
-from pydantic import (
-    BaseModel,
-    PositiveInt,
-    PyObject,
-)
+from pydantic import BaseModel, PositiveInt
+from pydantic.types import ImportString
 
 import xpublish
 
@@ -17,7 +14,7 @@ L = logging.getLogger(__name__)
 
 
 class ClusterConfig(BaseModel):
-    module: PyObject
+    module: ImportString
     # Plugin arguments
     args: set[str] = ()
     # Plugin named arguments
@@ -25,7 +22,7 @@ class ClusterConfig(BaseModel):
 
 
 class PluginConfig(BaseModel):
-    module: PyObject
+    module: ImportString
     # Plugin arguments
     args: set[str] = ()
     # Plugin named arguments

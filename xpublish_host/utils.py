@@ -1,8 +1,13 @@
 import itertools
 import types
 import weakref
+from typing import (
+    Generic,
+    List,
+    TypeVar,
+)
 
-import pydantic
+from pydantic import conlist
 
 
 class TypeParametersMemoizer(type):
@@ -28,23 +33,21 @@ class TypeParametersMemoizer(type):
         return types.GenericAlias(TypeParamsWrapper, typeparams)
 
 
-class CommaSeparatedList(list, metaclass=TypeParametersMemoizer):
+T = TypeVar('T')
+
+
+class CommaSeparatedList(Generic[T]):
     """
-    https://github.com/tiangolo/fastapi/discussions/8225#discussioncomment-5149945
+    A custom type for comma-separated lists compatible with Pydantic.
     """
     @classmethod
     def __get_validators__(cls):
         yield cls.validate
 
     @classmethod
-    def validate(cls, v: str | list[str]):
+    def validate(cls, v: str | List[str]):
         if isinstance(v, str):
             v = v.split(",")
         else:
             v = list(itertools.chain.from_iterable((x.split(",") for x in v)))
-        params = cls._get_type_parameters()
-        return pydantic.parse_obj_as(list[params], list(map(str.strip, v)))
-
-    @classmethod
-    def _get_type_parameters(cls):
-        raise NotImplementedError("should be overridden in metaclass")
+        return conlist(str, min_items=1)(list(map(str.strip, v)))

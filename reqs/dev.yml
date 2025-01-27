@@ -2,7 +2,7 @@ name: xpublish-host
 channels:
   - conda-forge
 dependencies:
-  - conda-forge::build
+  - conda-forge::python-build
   - conda-forge::flake8
   - conda-forge::httpx
   - conda-forge::pre-commit
